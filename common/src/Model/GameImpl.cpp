@@ -221,13 +221,13 @@ namespace TrenchBroom {
                         throw FileSystemException("Cannot open file: " + path.asString());
                     }
 
-                    const auto mtlPath = path.replaceExtension("mtl");
+                    auto mtlPath = path.replaceExtension("mtl");
                     std::ofstream mtlFile = openPathAsOutputStream(mtlPath);
                     if (!mtlFile) {
                         throw FileSystemException("Cannot open file: " + mtlPath.asString());
                     }
 
-                    IO::NodeWriter writer(world, std::make_unique<IO::ObjSerializer>(objFile, mtlFile, mtlPath.filename()));
+                    IO::NodeWriter writer(world, std::make_unique<IO::ObjSerializer>(objFile, mtlFile, std::move(mtlPath)));
                     writer.setExporting(true);
                     writer.writeMap();
                     break;

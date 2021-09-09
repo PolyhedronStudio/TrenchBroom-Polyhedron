@@ -18,6 +18,7 @@
  */
 
 #include "Logger.h"
+#include "Assets/Texture.h"
 #include "IO/NodeWriter.h"
 #include "IO/ObjSerializer.h"
 #include "Model/BezierPatch.h"
@@ -50,9 +51,9 @@ namespace TrenchBroom {
 
             auto objStream = std::ostringstream{};
             auto mtlStream = std::ostringstream{};
-            const auto mtlFilename = "some_file_name.mtl";
+            const auto mtlPath = Path{"materials/some_file_name.mtl"};
 
-            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlFilename)};
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
             writer.writeMap();
 
             CHECK(objStream.str() == R"(mtllib some_file_name.mtl
@@ -114,9 +115,9 @@ f  8/4/6  5/3/6  6/2/6  7/1/6
 
             auto objStream = std::ostringstream{};
             auto mtlStream = std::ostringstream{};
-            const auto mtlFilename = "some_file_name.mtl";
+            const auto mtlPath = Path{"some_file_name.mtl"};
 
-            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlFilename)};
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
             writer.writeMap();
 
             CHECK(objStream.str() == R"(mtllib some_file_name.mtl
@@ -361,5 +362,37 @@ f  71/1/71  80/1/80  81/1/81  72/1/72
             CHECK(mtlStream.str() == R"(newmtl some_texture
 )");
         }
+
+        TEST_CASE("ObjSerializer.writeRelativeMaterialPath") {
+            const auto worldBounds = vm::bbox3{8192.0};
+
+            // must outlive map
+            auto texture = Assets::Texture{"some_texture", 16, 16};
+            texture.setAbsolutePath(Path{"/home/that_guy/quake/textures/some_texture.png"});
+            texture.setRelativePath(Path{"textures/some_texture.png"});
+
+            auto map = Model::WorldNode{{}, {}, Model::MapFormat::Quake3};
+
+            auto builder = Model::BrushBuilder{map.mapFormat(), worldBounds};
+            auto* brushNode = new Model::BrushNode{builder.createCube(64.0, "some_texture").value()};
+            map.defaultLayer()->addChild(brushNode);
+
+            for (size_t i = 0; i < brushNode->brush().faceCount(); ++i) {
+                brushNode->setFaceTexture(i, &texture);
+            }
+
+            auto objStream = std::ostringstream{};
+            auto mtlStream = std::ostringstream{};
+            const auto mtlPath = Path{"/home/that_guy/quake/maps/some_file_name.mtl"};
+
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
+            writer.writeMap();
+
+            CHECK(mtlStream.str() == R"(newmtl some_texture
+map_Kd ../textures/some_texture.png
+
+)");
+        }
+
     }
 }
