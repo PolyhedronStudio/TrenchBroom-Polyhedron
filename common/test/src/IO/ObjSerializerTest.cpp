@@ -19,6 +19,7 @@
 
 #include "Logger.h"
 #include "Assets/Texture.h"
+#include "IO/ExportOptions.h"
 #include "IO/NodeWriter.h"
 #include "IO/ObjSerializer.h"
 #include "Model/BezierPatch.h"
@@ -32,6 +33,8 @@
 
 #include <kdl/result.h>
 #include <kdl/result_io.h>
+
+#include <fmt/format.h>
 
 #include <memory>
 #include <sstream>
@@ -53,7 +56,10 @@ namespace TrenchBroom {
             auto mtlStream = std::ostringstream{};
             const auto mtlPath = Path{"materials/some_file_name.mtl"};
 
-            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
+            const auto objOptions = ObjExportOptions{Path{}};
+            REQUIRE_FALSE(objOptions.gameDirRelativePaths);
+
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, std::move(mtlPath), objOptions)};
             writer.writeMap();
 
             CHECK(objStream.str() == R"(mtllib some_file_name.mtl
@@ -117,7 +123,10 @@ f  8/4/6  5/3/6  6/2/6  7/1/6
             auto mtlStream = std::ostringstream{};
             const auto mtlPath = Path{"some_file_name.mtl"};
 
-            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
+            const auto objOptions = ObjExportOptions{Path{}};
+            REQUIRE_FALSE(objOptions.gameDirRelativePaths);
+
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, std::move(mtlPath), objOptions)};
             writer.writeMap();
 
             CHECK(objStream.str() == R"(mtllib some_file_name.mtl
@@ -385,14 +394,29 @@ f  71/1/71  80/1/80  81/1/81  72/1/72
             auto mtlStream = std::ostringstream{};
             const auto mtlPath = Path{"/home/that_guy/quake/maps/some_file_name.mtl"};
 
-            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, mtlPath)};
+            using T = std::tuple<bool, IO::Path>;
+
+            const auto
+            [useGameDirRelativePath, expectedPath] = GENERATE(values<T>({
+            {false, Path{"../textures/some_texture.png"}},
+            {true, Path{"textures/some_texture.png"}},
+            }));
+
+            CAPTURE(useGameDirRelativePath);
+
+            const auto objOptions = ObjExportOptions{Path{}, useGameDirRelativePath};
+
+            auto writer = NodeWriter{map, std::make_unique<ObjSerializer>(objStream, mtlStream, std::move(mtlPath), objOptions)};
             writer.writeMap();
 
-            CHECK(mtlStream.str() == R"(newmtl some_texture
-map_Kd ../textures/some_texture.png
+            const auto expectedMtl = fmt::format(
+R"(newmtl some_texture
+map_Kd {}
 
-)");
+)", expectedPath.asString());
+
+
+            CHECK(mtlStream.str() == expectedMtl);
         }
-
     }
 }

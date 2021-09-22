@@ -264,7 +264,7 @@ namespace TrenchBroom {
             void saveDocument();
             void saveDocumentAs(const IO::Path& path);
             void saveDocumentTo(const IO::Path& path);
-            void exportDocumentAs(Model::ExportFormat format, const IO::Path& path);
+            void exportDocumentAs(const IO::ExportOptions& options);
         private:
             void doSaveDocument(const IO::Path& path);
             void clearDocument();

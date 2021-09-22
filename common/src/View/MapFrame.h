@@ -20,6 +20,7 @@
 #pragma once
 
 #include "NotifierConnection.h"
+#include "IO/ExportOptions.h"
 #include "Model/MapFormat.h"
 #include "View/Selection.h"
 
@@ -105,6 +106,7 @@ namespace TrenchBroom {
             QLabel* m_statusBarLabel;
 
             QPointer<QDialog> m_compilationDialog;
+            QPointer<QDialog> m_objExportDialog;
 
             NotifierConnection m_notifierConnection;
         private: // shortcuts
@@ -181,7 +183,7 @@ namespace TrenchBroom {
             bool revertDocument();
             bool exportDocumentAsObj();
             bool exportDocumentAsMap();
-            bool exportDocument(Model::ExportFormat format, const IO::Path& path);
+            bool exportDocument(const IO::ExportOptions& options);
         private:
             bool confirmOrDiscardChanges();
             bool confirmRevertDocument();

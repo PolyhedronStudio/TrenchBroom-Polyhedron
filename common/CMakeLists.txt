@@ -381,6 +381,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/View/MoveObjectsToolPage.cpp
         ${COMMON_SOURCE_DIR}/View/MultiCompletionLineEdit.cpp
         ${COMMON_SOURCE_DIR}/View/MultiMapView.cpp
+        ${COMMON_SOURCE_DIR}/View/ObjExportDialog.cpp
         ${COMMON_SOURCE_DIR}/View/OnePaneMapView.cpp
         ${COMMON_SOURCE_DIR}/View/PickRequest.cpp
         ${COMMON_SOURCE_DIR}/View/PopupButton.cpp
@@ -524,6 +525,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/EntityModelLoader.h
         ${COMMON_SOURCE_DIR}/IO/EntityModelParser.h
         ${COMMON_SOURCE_DIR}/IO/EntParser.h
+        ${COMMON_SOURCE_DIR}/IO/ExportOptions.h
         ${COMMON_SOURCE_DIR}/IO/FgdParser.h
         ${COMMON_SOURCE_DIR}/IO/File.h
         ${COMMON_SOURCE_DIR}/IO/FileMatcher.h
