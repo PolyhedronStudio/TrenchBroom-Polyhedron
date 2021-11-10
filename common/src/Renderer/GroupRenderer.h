@@ -26,88 +26,87 @@
 #include <vector>
 
 namespace TrenchBroom {
-    namespace Model {
-        class EditorContext;
-        class GroupNode;
+namespace Model {
+class EditorContext;
+class GroupNode;
+} // namespace Model
+
+namespace Renderer {
+class RenderBatch;
+class RenderContext;
+
+class GroupRenderer {
+private:
+  class GroupNameAnchor;
+
+  const Model::EditorContext& m_editorContext;
+  std::vector<Model::GroupNode*> m_groups;
+
+  DirectEdgeRenderer m_boundsRenderer;
+  bool m_boundsValid;
+
+  bool m_overrideColors;
+  bool m_showOverlays;
+  Color m_overlayTextColor;
+  Color m_overlayBackgroundColor;
+  bool m_showOccludedOverlays;
+  Color m_boundsColor;
+  bool m_showOccludedBounds;
+  Color m_occludedBoundsColor;
+
+public:
+  GroupRenderer(const Model::EditorContext& editorContext);
+
+  void setGroups(const std::vector<Model::GroupNode*>& groups);
+  void invalidate();
+  void clear();
+
+  template <typename Iter> void addGroups(Iter cur, const Iter end) {
+    while (cur != end) {
+      addGroup(*cur);
+      ++cur;
     }
-
-    namespace Renderer {
-        class RenderBatch;
-        class RenderContext;
-
-        class GroupRenderer {
-        private:
-            class GroupNameAnchor;
-
-            const Model::EditorContext& m_editorContext;
-            std::vector<Model::GroupNode*> m_groups;
-
-            DirectEdgeRenderer m_boundsRenderer;
-            bool m_boundsValid;
-
-            bool m_overrideColors;
-            bool m_showOverlays;
-            Color m_overlayTextColor;
-            Color m_overlayBackgroundColor;
-            bool m_showOccludedOverlays;
-            Color m_boundsColor;
-            bool m_showOccludedBounds;
-            Color m_occludedBoundsColor;
-        public:
-            GroupRenderer(const Model::EditorContext& editorContext);
-
-            void setGroups(const std::vector<Model::GroupNode*>& groups);
-            void invalidate();
-            void clear();
-
-            template <typename Iter>
-            void addGroups(Iter cur, const Iter end) {
-                while (cur != end) {
-                    addGroup(*cur);
-                    ++cur;
-                }
-            }
-            template <typename Iter>
-            void updateGroups(Iter cur, const Iter end) {
-                while (cur != end) {
-                    updateGroup(*cur);
-                    ++cur;
-                }
-            }
-
-            template <typename Iter>
-            void removeGroups(Iter cur, const Iter end) {
-                while (cur != end) {
-                    removeGroup(*cur);
-                    ++cur;
-                }
-            }
-
-            void setOverrideColors(bool overrideColors);
-
-            void setShowOverlays(bool showOverlays);
-            void setOverlayTextColor(const Color& overlayTextColor);
-            void setOverlayBackgroundColor(const Color& overlayBackgroundColor);
-            void setShowOccludedOverlays(bool showOccludedOverlays);
-
-            void setBoundsColor(const Color& boundsColor);
-
-            void setShowOccludedBounds(bool showOccludedBounds);
-            void setOccludedBoundsColor(const Color& occludedBoundsColor);
-        public: // rendering
-            void render(RenderContext& renderContext, RenderBatch& renderBatch);
-        private:
-            void renderBounds(RenderContext& renderContext, RenderBatch& renderBatch);
-            void renderNames(RenderContext& renderContext, RenderBatch& renderBatch);
-
-            void invalidateBounds();
-            void validateBounds();
-
-            bool shouldRenderGroup(const Model::GroupNode* group) const;
-
-            AttrString groupString(const Model::GroupNode* group) const;
-            Color groupColor(const Model::GroupNode* group) const;
-        };
+  }
+  template <typename Iter> void updateGroups(Iter cur, const Iter end) {
+    while (cur != end) {
+      updateGroup(*cur);
+      ++cur;
     }
-}
+  }
 
+  template <typename Iter> void removeGroups(Iter cur, const Iter end) {
+    while (cur != end) {
+      removeGroup(*cur);
+      ++cur;
+    }
+  }
+
+  void setOverrideColors(bool overrideColors);
+
+  void setShowOverlays(bool showOverlays);
+  void setOverlayTextColor(const Color& overlayTextColor);
+  void setOverlayBackgroundColor(const Color& overlayBackgroundColor);
+  void setShowOccludedOverlays(bool showOccludedOverlays);
+
+  void setBoundsColor(const Color& boundsColor);
+
+  void setShowOccludedBounds(bool showOccludedBounds);
+  void setOccludedBoundsColor(const Color& occludedBoundsColor);
+
+public: // rendering
+  void render(RenderContext& renderContext, RenderBatch& renderBatch);
+
+private:
+  void renderBounds(RenderContext& renderContext, RenderBatch& renderBatch);
+  void renderNames(RenderContext& renderContext, RenderBatch& renderBatch);
+
+  void invalidateBounds();
+  void validateBounds();
+
+  bool shouldRenderGroup(const Model::GroupNode* group) const;
+
+  AttrString groupString(const Model::GroupNode* group) const;
+  Color groupColor(const Model::GroupNode* group) const;
+};
+} // namespace Renderer
+} // namespace TrenchBroom

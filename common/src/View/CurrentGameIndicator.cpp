@@ -22,8 +22,8 @@
 #include "IO/Path.h"
 #include "IO/ResourceUtils.h"
 #include "Model/GameFactory.h"
-#include "View/ViewConstants.h"
 #include "View/QtUtils.h"
+#include "View/ViewConstants.h"
 
 #include <string>
 
@@ -31,34 +31,36 @@
 #include <QLabel>
 
 namespace TrenchBroom {
-    namespace View {
-        CurrentGameIndicator::CurrentGameIndicator(const std::string& gameName, QWidget* parent) :
-        QWidget(parent) {
-            // Use white background (or whatever color a text widget uses)
-            setBaseWindowColor(this);
+namespace View {
+CurrentGameIndicator::CurrentGameIndicator(const std::string& gameName, QWidget* parent)
+  : QWidget(parent) {
+  // Use white background (or whatever color a text widget uses)
+  setBaseWindowColor(this);
 
-            auto& gameFactory = Model::GameFactory::instance();
+  auto& gameFactory = Model::GameFactory::instance();
 
-            const auto gamePath = gameFactory.gamePath(gameName);
-            auto iconPath = gameFactory.iconPath(gameName);
-            if (iconPath.isEmpty()) {
-                iconPath = IO::Path("DefaultGameIcon.svg");
-            }
+  const auto gamePath = gameFactory.gamePath(gameName);
+  auto iconPath = gameFactory.iconPath(gameName);
+  if (iconPath.isEmpty()) {
+    iconPath = IO::Path("DefaultGameIcon.svg");
+  }
 
-            const auto gameIcon = IO::loadPixmapResource(iconPath);
-            auto* gameIconLabel = new QLabel();
-            gameIconLabel->setPixmap(gameIcon);
+  const auto gameIcon = IO::loadPixmapResource(iconPath);
+  auto* gameIconLabel = new QLabel();
+  gameIconLabel->setPixmap(gameIcon);
 
-            auto* gameNameLabel = new QLabel(QString::fromStdString(gameName));
-            makeHeader(gameNameLabel);
+  auto* gameNameLabel = new QLabel(QString::fromStdString(gameName));
+  makeHeader(gameNameLabel);
 
-            auto* layout = new QHBoxLayout();
-            layout->setContentsMargins(LayoutConstants::WideHMargin, LayoutConstants::MediumVMargin, LayoutConstants::WideHMargin, LayoutConstants::MediumVMargin);
-            layout->setSpacing(LayoutConstants::MediumHMargin);
-            setLayout(layout);
+  auto* layout = new QHBoxLayout();
+  layout->setContentsMargins(
+    LayoutConstants::WideHMargin, LayoutConstants::MediumVMargin, LayoutConstants::WideHMargin,
+    LayoutConstants::MediumVMargin);
+  layout->setSpacing(LayoutConstants::MediumHMargin);
+  setLayout(layout);
 
-            layout->addWidget(gameIconLabel, 0, Qt::AlignLeft | Qt::AlignVCenter);
-            layout->addWidget(gameNameLabel, 1, Qt::AlignLeft | Qt::AlignVCenter);
-        }
-    }
+  layout->addWidget(gameIconLabel, 0, Qt::AlignLeft | Qt::AlignVCenter);
+  layout->addWidget(gameNameLabel, 1, Qt::AlignLeft | Qt::AlignVCenter);
 }
+} // namespace View
+} // namespace TrenchBroom

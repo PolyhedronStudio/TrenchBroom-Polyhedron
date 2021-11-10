@@ -20,11 +20,11 @@
 #pragma once
 
 namespace TrenchBroom {
-    namespace Model {
-        enum class ExportFormat {
-            WavefrontObj,
-            Map
-        };
-    }
-}
-
+namespace Model {
+enum class ExportFormat
+{
+  WavefrontObj,
+  Map
+};
+} // namespace Model
+} // namespace TrenchBroom
