@@ -19,6 +19,7 @@
 
 #include "EntityDefinition.h"
 
+#include "Macros.h"
 #include "Assets/PropertyDefinition.h"
 #include "Model/EntityProperties.h"
 
@@ -69,24 +70,23 @@ namespace TrenchBroom {
         }
 
         size_t EntityDefinition::usageCount() const {
-            return m_usageCount;
+            return static_cast<size_t>(m_usageCount);
         }
 
         void EntityDefinition::incUsageCount() {
             ++m_usageCount;
-            usageCountDidChangeNotifier();
         }
 
         void EntityDefinition::decUsageCount() {
-            assert(m_usageCount > 0);
-            --m_usageCount;
-            usageCountDidChangeNotifier();
+            const size_t previous = m_usageCount--;
+            assert(previous > 0);
+            unused(previous);
         }
 
         const FlagsPropertyDefinition* EntityDefinition::spawnflags() const {
             for (const auto& propertyDefinition : m_propertyDefinitions) {
                 if (propertyDefinition->type() == PropertyDefinitionType::FlagsProperty &&
-                    propertyDefinition->key() == Model::PropertyKeys::Spawnflags) {
+                    propertyDefinition->key() == Model::EntityPropertyKeys::Spawnflags) {
                     return static_cast<FlagsPropertyDefinition*>(propertyDefinition.get());
                 }
             }
@@ -159,7 +159,7 @@ namespace TrenchBroom {
             m_name(name),
             m_color(color),
             m_description(description),
-            m_usageCount(0),
+            m_usageCount(0u),
             m_propertyDefinitions(propertyDefinitions) {}
 
         PointEntityDefinition::PointEntityDefinition(const std::string& name, const Color& color, const vm::bbox3& bounds, const std::string& description, const PropertyDefinitionList& propertyDefinitions, const ModelDefinition& modelDefinition) :
@@ -173,14 +173,6 @@ namespace TrenchBroom {
 
         const vm::bbox3& PointEntityDefinition::bounds() const {
             return m_bounds;
-        }
-
-        ModelSpecification PointEntityDefinition::model(const EL::VariableStore& variableStore) const {
-            return m_modelDefinition.modelSpecification(variableStore);
-        }
-
-        ModelSpecification PointEntityDefinition::defaultModel() const {
-            return m_modelDefinition.defaultModelSpecification();
         }
 
         const ModelDefinition& PointEntityDefinition::modelDefinition() const {

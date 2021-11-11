@@ -18,46 +18,68 @@
  */
 
 #include "Texture.h"
+#include "Macros.h"
 #include "Assets/TextureBuffer.h"
 #include "Assets/TextureCollection.h"
 #include "Renderer/GL.h"
 
 #include <algorithm> // for std::max
 #include <cassert>
+#include <ostream>
 
 namespace TrenchBroom {
     namespace Assets {
-        Texture::Texture(const std::string& name, const size_t width, const size_t height, const Color& averageColor, Buffer&& buffer, const GLenum format, const TextureType type) :
+        bool Q2Data::operator==(const Q2Data& other) const {
+            return flags == other.flags
+                && contents == other.contents
+                && value == other.value;
+        }
+
+        bool Q2Data::operator!=(const Q2Data& other) const {
+            return !(*this == other);
+        }
+
+        std::ostream& operator<<(std::ostream& str, const Q2Data& data) {
+            str << "{flags: " << data.flags 
+                << ", contents: " << data.contents 
+                << ", value: " << data.value
+                << "}";
+            return str;
+        }
+
+        Texture::Texture(const std::string& name, const size_t width, const size_t height, const Color& averageColor, Buffer&& buffer, const GLenum format, const TextureType type, GameData gameData) :
         m_name(name),
         m_width(width),
         m_height(height),
         m_averageColor(averageColor),
-        m_usageCount(0),
+        m_usageCount(0u),
         m_overridden(false),
         m_format(format),
         m_type(type),
         m_culling(TextureCulling::CullDefault),
         m_blendFunc{TextureBlendFunc::Enable::UseDefault, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA},
-        m_textureId(0) {
+        m_textureId{0},
+        m_gameData{std::move(gameData)} {
             assert(m_width > 0);
             assert(m_height > 0);
             assert(buffer.size() >= m_width * m_height * bytesPerPixelForFormat(format));
             m_buffers.push_back(std::move(buffer));
         }
 
-        Texture::Texture(const std::string& name, const size_t width, const size_t height, const Color& averageColor, BufferList&& buffers, const GLenum format, const TextureType type) :
+        Texture::Texture(const std::string& name, const size_t width, const size_t height, const Color& averageColor, BufferList&& buffers, const GLenum format, const TextureType type, GameData gameData) :
         m_name(name),
         m_width(width),
         m_height(height),
         m_averageColor(averageColor),
-        m_usageCount(0),
+        m_usageCount(0u),
         m_overridden(false),
         m_format(format),
         m_type(type),
         m_culling(TextureCulling::CullDefault),
         m_blendFunc{TextureBlendFunc::Enable::UseDefault, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA},
         m_textureId(0),
-        m_buffers(std::move(buffers)) {
+        m_buffers{std::move(buffers)},
+        m_gameData{std::move(gameData)} {
             assert(m_width > 0);
             assert(m_height > 0);
 
@@ -70,20 +92,59 @@ namespace TrenchBroom {
             }
         }
 
-        Texture::Texture(const std::string& name, const size_t width, const size_t height, const GLenum format, const TextureType type) :
+        Texture::Texture(const std::string& name, const size_t width, const size_t height, const GLenum format, const TextureType type, GameData gameData) :
         m_name(name),
         m_width(width),
         m_height(height),
         m_averageColor(Color(0.0f, 0.0f, 0.0f, 1.0f)),
-        m_usageCount(0),
+        m_usageCount(0u),
         m_overridden(false),
         m_format(format),
         m_type(type),
         m_culling(TextureCulling::CullDefault),
         m_blendFunc{TextureBlendFunc::Enable::UseDefault, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA},
-        m_textureId(0) {}
+        m_textureId{0},
+        m_gameData{std::move(gameData)} {}
 
         Texture::~Texture() = default;
+
+        Texture::Texture(Texture&& other) :
+        m_name{std::move(other.m_name)},
+        m_absolutePath{std::move(other.m_absolutePath)},
+        m_relativePath{std::move(other.m_relativePath)},
+        m_width{std::move(other.m_width)},
+        m_height{std::move(other.m_height)},
+        m_averageColor{std::move(other.m_averageColor)},
+        m_usageCount{static_cast<size_t>(other.m_usageCount)},
+        m_overridden{std::move(other.m_overridden)},
+        m_format{std::move(other.m_format)},
+        m_type{std::move(other.m_type)},
+        m_surfaceParms{std::move(other.m_surfaceParms)},
+        m_culling{std::move(other.m_culling)},
+        m_blendFunc{std::move(other.m_blendFunc)},
+        m_textureId{std::move(other.m_textureId)},
+        m_buffers{std::move(other.m_buffers)},
+        m_gameData{std::move(other.m_gameData)} {}
+
+        Texture& Texture::operator=(Texture&& other) {
+            m_name = std::move(other.m_name);
+            m_absolutePath = std::move(other.m_absolutePath);
+            m_relativePath = std::move(other.m_relativePath);
+            m_width = std::move(other.m_width);
+            m_height = std::move(other.m_height);
+            m_averageColor = std::move(other.m_averageColor);
+            m_usageCount = static_cast<size_t>(other.m_usageCount);
+            m_overridden = std::move(other.m_overridden);
+            m_format = std::move(other.m_format);
+            m_type = std::move(other.m_type);
+            m_surfaceParms = std::move(other.m_surfaceParms);
+            m_culling = std::move(other.m_culling);
+            m_blendFunc = std::move(other.m_blendFunc);
+            m_textureId = std::move(other.m_textureId);
+            m_buffers = std::move(other.m_buffers);
+            m_gameData = std::move(other.m_gameData);
+            return *this;
+        }
 
         TextureType Texture::selectTextureType(const bool masked) {
             if (masked) {
@@ -159,8 +220,12 @@ namespace TrenchBroom {
             m_blendFunc.enable = TextureBlendFunc::Enable::DisableBlend;
         }
 
+        const GameData& Texture::gameData() const {
+            return m_gameData;
+        }
+
         size_t Texture::usageCount() const {
-            return m_usageCount;
+            return static_cast<size_t>(m_usageCount);
         }
 
         void Texture::incUsageCount() {
@@ -168,8 +233,9 @@ namespace TrenchBroom {
         }
 
         void Texture::decUsageCount() {
-            assert(m_usageCount > 0);
-            --m_usageCount;
+            const size_t previous = m_usageCount--;
+            assert(previous > 0);
+            unused(previous);
         }
 
         bool Texture::overridden() const {

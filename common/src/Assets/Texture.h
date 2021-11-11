@@ -26,8 +26,11 @@
 
 #include <vecmath/forward.h>
 
+#include <atomic>
+#include <iosfwd>
 #include <set>
 #include <string>
+#include <variant>
 #include <vector>
 
 namespace TrenchBroom {
@@ -71,6 +74,18 @@ namespace TrenchBroom {
             GLenum destFactor;
         };
 
+        struct Q2Data {
+            int flags;
+            int contents;
+            int value;
+
+            bool operator==(const Q2Data& other) const;
+            bool operator!=(const Q2Data& other) const;
+        };
+        std::ostream& operator<<(std::ostream& str, const Q2Data& data);
+
+        using GameData = std::variant<std::monostate, Q2Data>;
+
         class Texture {
         private:
             using Buffer = TextureBuffer;
@@ -84,12 +99,13 @@ namespace TrenchBroom {
             size_t m_height;
             Color m_averageColor;
 
-            size_t m_usageCount;
+            std::atomic<size_t> m_usageCount;
             bool m_overridden;
 
             GLenum m_format;
             TextureType m_type;
 
+            // TODO: move these to a Q3Data variant case of m_gameData if possible
             // Quake 3 surface parameters; move these to materials when we add proper support for those.
             std::set<std::string> m_surfaceParms;
 
@@ -101,16 +117,18 @@ namespace TrenchBroom {
 
             mutable GLuint m_textureId;
             mutable BufferList m_buffers;
+
+            GameData m_gameData;
         public:
-            Texture(const std::string& name, size_t width, size_t height, const Color& averageColor, Buffer&& buffer, GLenum format, TextureType type);
-            Texture(const std::string& name, size_t width, size_t height, const Color& averageColor, BufferList&& buffers, GLenum format, TextureType type);
-            Texture(const std::string& name, size_t width, size_t height, GLenum format = GL_RGB, TextureType type = TextureType::Opaque);
+            Texture(const std::string& name, size_t width, size_t height, const Color& averageColor, Buffer&& buffer, GLenum format, TextureType type, GameData gameData = std::monostate{});
+            Texture(const std::string& name, size_t width, size_t height, const Color& averageColor, BufferList&& buffers, GLenum format, TextureType type, GameData gameData = std::monostate{});
+            Texture(const std::string& name, size_t width, size_t height, GLenum format = GL_RGB, TextureType type = TextureType::Opaque, GameData gameData = std::monostate{});
 
             Texture(const Texture&) = delete;
             Texture& operator=(const Texture&) = delete;
             
-            Texture(Texture&& other) = default;
-            Texture& operator=(Texture&& other) = default;
+            Texture(Texture&& other);
+            Texture& operator=(Texture&& other);
 
             ~Texture();
 
@@ -149,6 +167,8 @@ namespace TrenchBroom {
 
             void setBlendFunc(GLenum srcFactor, GLenum destFactor);
             void disableBlend();
+
+            const GameData& gameData() const;
 
             size_t usageCount() const;
             void incUsageCount();

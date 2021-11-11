@@ -23,6 +23,7 @@
 #include "Preferences.h"
 #include "Assets/EntityDefinition.h"
 #include "Assets/EntityDefinitionManager.h"
+#include "Model/WorldNode.h"
 #include "View/EntityBrowserView.h"
 #include "View/ViewConstants.h"
 #include "View/MapDocument.h"
@@ -57,6 +58,9 @@ namespace TrenchBroom {
 
         void EntityBrowser::reload() {
             if (m_view != nullptr) {
+                auto document = kdl::mem_lock(m_document);
+                m_view->setDefaultModelScaleExpression(document->world()->entityPropertyConfig().defaultModelScaleExpression);
+
                 m_view->invalidate();
                 m_view->update();
             }
@@ -135,6 +139,7 @@ namespace TrenchBroom {
             m_notifierConnection += document->documentWasLoadedNotifier.connect(this, &EntityBrowser::documentWasLoaded);
             m_notifierConnection += document->modsDidChangeNotifier.connect(this, &EntityBrowser::modsDidChange);
             m_notifierConnection += document->entityDefinitionsDidChangeNotifier.connect(this, &EntityBrowser::entityDefinitionsDidChange);
+            m_notifierConnection += document->nodesDidChangeNotifier.connect(this, &EntityBrowser::nodesDidChange);
 
             PreferenceManager& prefs = PreferenceManager::instance();
             m_notifierConnection += prefs.preferenceDidChangeNotifier.connect(this, &EntityBrowser::preferenceDidChange);
@@ -149,6 +154,11 @@ namespace TrenchBroom {
         }
 
         void EntityBrowser::modsDidChange() {
+            reload();
+        }
+
+        void EntityBrowser::nodesDidChange(const std::vector<Model::Node*>&) {
+            // to handle definition usage count changes
             reload();
         }
 

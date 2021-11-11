@@ -26,6 +26,7 @@
 #include <memory>
 #include <vector>
 
+class QAbstractButton;
 class QLabel;
 class QLineEdit;
 class QGridLayout;
@@ -41,6 +42,7 @@ namespace TrenchBroom {
         class GLContextManager;
         class MapDocument;
         class Selection;
+        class SignalDelayer;
         class SpinControl;
         class UVEditor;
 
@@ -58,15 +60,25 @@ namespace TrenchBroom {
             SpinControl* m_yScaleEditor;
             SpinControl* m_rotationEditor;
             QLabel* m_surfaceValueLabel;
+            QWidget* m_surfaceValueEditorLayout;
             SpinControl* m_surfaceValueEditor;
+            QAbstractButton* m_surfaceValueUnsetButton;
 
             QLabel* m_surfaceFlagsLabel;
+            QWidget* m_surfaceFlagsEditorLayout;
             FlagsPopupEditor* m_surfaceFlagsEditor;
+            QAbstractButton* m_surfaceFlagsUnsetButton;
             QLabel* m_contentFlagsLabel;
+            QWidget* m_contentFlagsEditorLayout;
             FlagsPopupEditor* m_contentFlagsEditor;
+            QAbstractButton* m_contentFlagsUnsetButton;
 
             QLabel* m_colorLabel;
+            QWidget* m_colorEditorLayout;
             QLineEdit* m_colorEditor;
+            QAbstractButton* m_colorUnsetButton;
+
+            SignalDelayer* m_updateControlsSignalDelayer;
 
             NotifierConnection m_notifierConnection;
         public:
@@ -83,6 +95,10 @@ namespace TrenchBroom {
             void contentFlagChanged(size_t index, int value, int setFlag, int mixedFlag);
             void surfaceValueChanged(double value);
             void colorValueChanged(const QString& text);
+            void surfaceFlagsUnset();
+            void contentFlagsUnset();
+            void surfaceValueUnset();
+            void colorValueUnset();
             void updateIncrements();
         private:
             void createGui(GLContextManager& contextManager);
@@ -98,6 +114,7 @@ namespace TrenchBroom {
             void textureCollectionsDidChange();
 
             void updateControls();
+            void updateControlsDelayed();
 
             bool hasSurfaceFlags() const;
             bool hasContentFlags() const;

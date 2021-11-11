@@ -74,7 +74,7 @@ namespace TrenchBroom {
 
             auto& gameFactory = Model::GameFactory::instance();
             const auto& gameConfig = gameFactory.gameConfig(gameName);
-            m_config = gameConfig.gameEngineConfig();
+            m_config = gameConfig.gameEngineConfig;
             m_gameEngineList = new GameEngineProfileListBox(&m_config);
             m_gameEngineList->setEmptyText("Click the 'Configure engines...' button to create a game engine profile.");
             m_gameEngineList->setMinimumSize(250, 280);
@@ -91,6 +91,7 @@ namespace TrenchBroom {
             makeEmphasized(parameterLabel);
 
             m_parameterText = new MultiCompletionLineEdit();
+            m_parameterText->setFont(Fonts::fixedWidthFont());
             m_parameterText->setMultiCompleter(new QCompleter(new VariableStoreModel(variables())));
             m_parameterText->setWordDelimiters(QRegularExpression("\\$"), QRegularExpression("\\}"));
 
@@ -160,7 +161,7 @@ namespace TrenchBroom {
 
             auto& gameFactory = Model::GameFactory::instance();
             const auto& gameConfig = gameFactory.gameConfig(gameName);
-            m_config = gameConfig.gameEngineConfig();
+            m_config = gameConfig.gameEngineConfig;
 
             m_gameEngineList->setConfig(&m_config);
         }

@@ -252,7 +252,7 @@ In a 2D viewport, you can also left click an object to select it. But unlike in 
 
 You may also think of left click selection like this: In both the 3D viewport or a 2D viewport, TrenchBroom first compiles a set of candidate objects. These are all objects under the mouse. Then, it must choose an object to be selected from these candidates. In the 3D viewport, the frontmost object always wins (unless you're using the scroll wheel to drill the selection), and in a 2D view, the object with the smallest visible area wins. Other than that, selection behaves exactly the same in both viewports, that is, you can hold #key(Ctrl) to select multiple objects and so on.
 
-Sometimes, selecting objects manually is too tedious. To select all currently editable objects, you can choose #menu(Menu/Edit/Select All) from the menu. Note that hidden and locked objects are excluded, so this command is particularly useful in conjunction with those features. Another option to select multiple objects at once is to use _selection brushes_. Just create one or more new brushes that enclose or touch all the objects you wish to select. These brushes are called a selection brushes. Select all of these newly created selection brushes, and choose #menu(Menu/Edit/Select Touching) to select every object touched by the selection brushes, or choose #menu(Menu/Edit/Select Inside) to select every object enclosed inside them.
+Sometimes, selecting objects manually is too tedious. To select all currently editable objects, you can choose #menu(Menu/Edit/Select All) from the menu. Note that hidden and locked objects are excluded, so this command is particularly useful in conjunction with those features. Another option to select multiple objects at once is to use _selection brushes_. Just create one or more new brushes that enclose or touch all the objects you wish to select. These brushes are called selection brushes. Select all of these newly created selection brushes, and choose #menu(Menu/Edit/Select Touching) to select every object touched by the selection brushes, or choose #menu(Menu/Edit/Select Inside) to select every object enclosed inside them.
 
 ![Using a selection brush](images/SelectTouching.gif)
 
@@ -326,7 +326,7 @@ Generic   `<MOD>/textures`  `<GamePath>/textures`
 
 ## Interacting With the Editor
 
-Before we delve into specific editing operations such as creating new objects, you should learn some basics about how to interact with the editor itself. In particular, it is import to understand the concept of tools in TrenchBroom and how mouse input is mapped to 3D coordinates.
+Before we delve into specific editing operations such as creating new objects, you should learn some basics about how to interact with the editor itself. In particular, it is important to understand the concept of tools in TrenchBroom and how mouse input is mapped to 3D coordinates.
 
 ### Working with Tools
 
@@ -360,11 +360,11 @@ Vertex Tool           #menu(Menu/Edit/Tools/Vertex Tool)
 
 ![Tool buttons](images/ToolbarTools.png) Additionally, tools can be toggled by using the buttons on the left of the toolbar. In the image, the first button is active, however, this particular button does not represent any of the modal tools listed in the table above. Rather, it indicates that no modal tool is currently active, and therefore all permanent tools are available. The buttons icon indicates that objects can be moved, which is only possible if no modal tool is active. The second button represents the convex brush tool, the third button toggles the clip tool, the fourth button is used to toggle the vertex tool and the fifth button toggles the rotate tool.
 
-You can learn more about these tools in later sections. But before you can learn about the tools in detail, you should undertand how TrenchBroom processes mouse input, which is what the following two sections will explain.
+You can learn more about these tools in later sections. But before you can learn about the tools in detail, you should understand how TrenchBroom processes mouse input, which is what the following two sections will explain.
 
 ### Cancelling Operations and Tools {#cancelling}
 
-To cancel a mouse drag by hitting #action(Controls/Map view/Cancel). The operation will be undone immediately. The same keyboard shortcut can be used to cancel all kinds of things in the editor. The following table lists the effects of cancelling depending on the current state of the editor.
+To cancel a mouse drag, hit #action(Controls/Map view/Cancel). The operation will be undone immediately. The same keyboard shortcut can be used to cancel all kinds of things in the editor. The following table lists the effects of cancelling depending on the current state of the editor.
 
 State                 Effect
 -----                 ------
@@ -1377,11 +1377,13 @@ The preferences dialog allows you to set the game configurations, to change the 
 
 ## Game Configuration {#game_configuration}
 
-![Game Configuration Dialog (Ubuntu Linux)](images/GamePreferences.png)
+![Game Configuration Dialog (Mac OS X)](images/GamePreferences.png)
 
 The game configuration preference pane is where you set up the paths to the games that TrenchBroom supports. For each game, you can set the game path by clicking on the "..." button and selecting the folder in which the game is stored on your hard drive. Alternatively, you can enter a path manually in the text box, but you have to hit #key(Return) to apply the change.
 
 Additionally, you can configure the game engines for the selected game by clicking on the 'Configure engines...' button.
+
+Clicking the folder icon below the game list opens the folder that contains custom game configurations in a file browser.
 
 ![Game Engine Configuration Dialog (Mac OS X)](images/GameEngineDialog.png)
 
@@ -1397,6 +1399,8 @@ The benefits of specifying your tool paths here (if the game configuration allow
 - If your tool paths need to be changed, you only have to change them here.
 
 So in the example above, if you wanted to try a later version of ericw-tools that are located in a different folder like `C:\mapping\ericw-tools-v0.19-win64\bin`, then you would only need to change the paths in this dialog. You wouldn't need to edit all of your compilation profiles.
+
+You can also add [custom game configurations](#game_configuration_files) to suit a particular setup (such as an engine supporting formats that TrenchBroom supports, but does not expect with that game).
 
 ## View Layout and Rendering {#view_layout_and_rendering}
 
@@ -1575,7 +1579,7 @@ Variable 		Description
 `GAME_DIR_PATH`	The full path to the current game as specified in the game preferences.
 `MODS` 			An array containing all enabled mods for the current map.
 
-The `MODS` variable is useful to pass a parameter to the engine to choose a mod. Usually, this will be the last mod in the mods for the current map. Since the `MODS` variable is an array that contains all mods for the map, its individual entries are accessed using teh subscript operator (see below). To access the last entry in the array, you can use the expression `$MODS[-1]`.
+The `MODS` variable is useful to pass a parameter to the engine to choose a mod. Usually, this will be the last mod in the mods for the current map. Since the `MODS` variable is an array that contains all mods for the map, its individual entries are accessed using the subscript operator (see below). To access the last entry in the array, you can use the expression `$MODS[-1]`.
 
 Note that the parameters are stored with the game engine profile.
 
@@ -2158,16 +2162,18 @@ Thereby, the ellipsis contains the actual information about the model to display
     {
     	"path" : MODEL,
     	"skin" : SKIN,
-    	"frame": FRAME
+    	"frame": FRAME,
+        "scale": SCALE_EXPRESSION
     }
 
-The placeholders `MODEL`, `SKIN`, and `FRAME` have the following meaning
+The placeholders `MODEL`, `SKIN`, `FRAME` and `SCALE_EXPRESSION` have the following meaning
 
 Placeholder 		Description
 -----------     	-----------
 `MODEL` 			The path to the model file relative to the game path, with an optional colon at the beginning. Mandatory.
 `SKIN` 				The 0-based index of the skin to display. Optional, defaults to 0.
 `FRAME` 			The 0-based index of the frame to display. Optional, defaults to 0.
+`SCALE_EXPRESSION`  An expression that is evaluated against an entities' properties to determine the model scale.
 
 If the expression evaluates to a value of type string, then that is interpreted as a map containing only a `path` key with the string as its value. In other words, if the expression evaluates to a string, then that value is interpreted as the path to a model. Think of such expressions as shorthands that allow you to define a simple model like so:
 
@@ -2176,6 +2182,8 @@ If the expression evaluates to a value of type string, then that is interpreted 
 instead of having to write
 
     model({ "path": "path/to/model" })
+
+If the model expression has a scale expression, then its result is used as the scale value for the model. If the expression cannot be evaluated, or if no such expression is given, then the default scale expression from the game configuration is evaluated instead. Refer to [this section](#game_configuration_files_entities) for more information about `SCALE_EXPRESSION` and the default scale expression.
 
 #### Basic Examples
 
@@ -2195,6 +2203,12 @@ So a valid model definitions might look like this:
     	"path" : "progs/armor",
     	"skin" : 1,
     	"frame": 3
+    })
+
+	// set a fixed uniform model scale factor 2
+    model({
+    	"path" : "progs/armor",
+    	"scale" : 2
     })
 
 Sometimes, the actual model that is displayed in game depends on the value of an entity property. TrenchBroom allows you to mimick this behavior by using conditional expressions using the switch and case operators and by referring to the entity properties as variables in the expressions. Let's look at an example where we combine several model definitions using a literal value.
@@ -2348,6 +2362,8 @@ Linux 			`~/.TrenchBroom`
 
 To add a new game configuration to TrenchBroom, place it into a folder under `<UserDataPath>/games` -- note that you might need to create that folder if it does not exist. You will need to write your own `GameConfig.cfg` file, or you can copy one of the builtin files and base your game configuration on that. Additionally, you can place additional resources in the folder you created. As an example, suppose you want to add a game configuration for a game called "Example". For this, you would create a new folder `<UserDataPath>/games/Example`, and within that folder, you would create a game configuration file called `GameConfig.cfg`. If you need additional resource such as an icon or entity definition files, you would place those files into this newly created folder as well.
 
+You can also access this directory using the folder icon button below the game list in the [game configuration dialog](#game_configuration).
+
 To override a builtin game configuration file, copy the folder containing the builtin file and place it in `<UserDataPath>/games`. TrenchBroom will prioritize your custom game configurations over the builtin files, but you can still access the resources in the game's resource sub folder without problems. If you wish, you can also override some of these resources by placing a file of the same name in your game resource sub directory.
 
 As an example, consider the case where you want to override the builtin Quake game configuration and the builtin entity definition file for Quake. Copy the file `<ResourcePath>/games/Quake/GameConfig.cfg` to `<UserDataPath>/games/Quake` and modify it as needed. Then copy the file `<ResourcePath>/games/Quake/Quake.fgd` to `<UserDataPath>/games/Quake` and modify it, too. When you load the game configuration in TrenchBroom, the editor will pick up the modified files instead of the builtin ones.
@@ -2369,6 +2385,7 @@ Game configuration files need to specify the following information.
 	* The builtin **entity definition files**
 	* The **default color** to use in the UI
 	* The supported **model formats**, e.g. mdl
+    * A default **model scale expression**
 * **Tags** to attach additional information to faces or brushes in the editor, e.g. whether a face is detail or hint. (optional)
 * **Face attributes** to specify which additional attributes to allow on brush faces (optional)
 * **Map bounds** to be displayed in the 2D viewports (optional)
@@ -2397,7 +2414,8 @@ The game configuration is an [expression language](#expression_language) map wit
         "entities": { // the builtin entity definition files for this game
             "definitions": [ "Quake2.fgd" ],
             "defaultcolor": "0.6 0.6 0.6 1.0",
-            "modelformats": [ "md2" ]
+            "modelformats": [ "md2" ],
+            "scale": [ modelscale, modelscale_vec ]
         },
         "tags": { // "smart tags" select or modify a brush/face based on its characteristics
             "brush": [
@@ -2606,14 +2624,15 @@ The optional `excludes` key specifies a list of patterns matched against texture
         "excludes": [ "*_norm", "*_gloss" ]
     },
 
-#### Entity Configuration
+#### Entity Configuration {#game_configuration_files_entities}
 
-In the entity configuration section, you can specify which entity definition files come with your game configuration, which model formats are supported for rendering the entity models in the editor, and a default color for entities.
+In the entity configuration section, you can specify which entity definition files come with your game configuration, which model formats are supported for rendering the entity models in the editor, a default color for entities and an expression that yields a default scale when evaluated against an entities' properties.
 
   	"entities": { // the builtin entity definition files for this game
 		"definitions": [ "Quake2/Quake2.fgd" ],
     	"defaultcolor": "0.6 0.6 0.6 1.0",
-		"modelformats": [ "md2" ]
+		"modelformats": [ "md2" ],
+        "scale": [ modelscale, modelscale_vec ]
     },
 
 The `definitions` key provides a list of entity definition files. These files are specified by a path that is relative to the `games` directory where TrenchBroom searches for the game configurations.
@@ -2627,6 +2646,18 @@ md2          Quake 2 model format
 md3          Quake 3 model format
 bsp        	 Compiled brush model, used by Quake and Hexen 2
 dkm          Daikatana model format
+
+
+The `scale` key has an expression that is evaluated against an entities' properties to determine the model scale. This expression can refer to any of the entities' properties, or it can provide fixed values.
+
+Example                                   Description
+-------                                   -----------
+`"scale": 2`                              A fixed uniform scale factor of `2`.
+`"scale": "1 2 3"`                        A fixed non-uniform scale factor scaling X by 1, Y by 2 and Z by 3.
+`"scale": modelscale`                     Use the value of the entities' `modelscale` property.
+`"scale": [ modelscale, modelscale_vec ]` Try the individual values in the array until we find one that doesn't evaluate to `Undefined` or `Null`.
+
+Of course, you could use the switch and case operators for more complicated cases.
 
 #### Tags {#game_configuration_files_tags}
 

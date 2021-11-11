@@ -22,7 +22,7 @@
 #include "Macros.h"
 #include "NotifierConnection.h"
 
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <vector>
 
@@ -69,6 +69,15 @@ namespace TrenchBroom {
             std::unique_ptr<PatchRenderer> m_patchRenderer;
             std::unique_ptr<GroupLinkRenderer> m_groupLinkRenderer;
 
+            typedef enum {
+                Renderer_Default            = 1,
+                Renderer_Selection          = 2,
+                Renderer_Locked             = 4,
+                Renderer_All                = Renderer_Default | Renderer_Selection | Renderer_Locked
+            } Renderer;
+
+            std::unordered_map<Model::Node*, Renderer> m_trackedNodes;
+
             NotifierConnection m_notifierConnection;
         public:
             explicit MapRenderer(std::weak_ptr<View::MapDocument> document);
@@ -95,21 +104,18 @@ namespace TrenchBroom {
             void renderGroupLinks(RenderContext& renderContext, RenderBatch& renderBatch);
 
             void setupRenderers();
-            // void setupDefaultRenderer(ObjectRenderer& renderer);
-            // void setupSelectionRenderer(ObjectRenderer& renderer);
-            // void setupLockedRenderer(ObjectRenderer& renderer);
-            void setupEntityLinkRenderer();
+            void setupDefaultRenderer(ObjectRenderer& renderer);
+            void setupSelectionRenderer(ObjectRenderer& renderer);
+            void setupLockedRenderer(ObjectRenderer& renderer);
 
-            class CollectRenderableNodes;
+            static Renderer determineDesiredRenderers(Model::Node* node);
+            void updateAndInvalidateNode(Model::Node* node);
+            void updateAndInvalidateNodeRecursive(Model::Node* node);
+            void removeNode(Model::Node* node);
+            void removeNodeRecursive(Model::Node* node);
+            void updateAllNodes();
 
-            /**
-             * This moves nodes between default / selection / locked renderers as needed,
-             * but doesn't otherwise invalidate them.
-             * (in particular, brushes are not updated unless they move between renderers.)
-             * If brushes are modified, you need to call invalidateRenderers() or invalidateObjectsInRenderers()
-             */
-            void updateRenderers();
-            void invalidateRenderers();
+            void invalidateRenderers(Renderer renderers);
             void invalidateEntityLinkRenderer();
             void invalidateGroupLinkRenderer();
             void reloadEntityModels();

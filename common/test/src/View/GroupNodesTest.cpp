@@ -21,7 +21,10 @@
 #include "TestUtils.h"
 
 #include "Model/BrushBuilder.h"
+#include "Model/BrushFace.h"
+#include "Model/BrushFaceHandle.h"
 #include "Model/BrushNode.h"
+#include "Model/ChangeBrushFaceAttributesRequest.h"
 #include "Model/Entity.h"
 #include "Model/EntityNode.h"
 #include "Model/GroupNode.h"
@@ -32,6 +35,8 @@
 #include "View/PasteType.h"
 
 #include <kdl/result.h>
+
+#include <vecmath/mat_ext.h>
 
 #include <functional>
 #include <set>
@@ -74,7 +79,7 @@ namespace TrenchBroom {
             Model::PatchNode* child2 = createPatchNode();
             addNode(*document, document->parentForNodes(), child2);
 
-            Model::EntityNode* entity = new Model::EntityNode();
+            Model::EntityNode* entity = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), entity);
             reparentNodes(*document, entity, { child1, child2 });
 
@@ -105,7 +110,7 @@ namespace TrenchBroom {
             Model::PatchNode* child2 = createPatchNode();
             addNode(*document, document->parentForNodes(), child2);
 
-            Model::EntityNode* entity = new Model::EntityNode();
+            Model::EntityNode* entity = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), entity);
             reparentNodes(*document, entity, { child1, child2 });
 
@@ -146,7 +151,7 @@ namespace TrenchBroom {
             Model::BrushNode* brush1 = createBrushNode();
             addNode(*document, document->parentForNodes(), brush1);
 
-            Model::EntityNode* entityNode = new Model::EntityNode();
+            Model::EntityNode* entityNode = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), entityNode);
             reparentNodes(*document, entityNode, { brush1 });
 
@@ -170,7 +175,7 @@ namespace TrenchBroom {
             Model::BrushNode* brush1 = createBrushNode();
             addNode(*document, document->parentForNodes(), brush1);
 
-            Model::EntityNode* entityNode = new Model::EntityNode();
+            Model::EntityNode* entityNode = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), entityNode);
             reparentNodes(*document, entityNode, { brush1 });
 
@@ -224,10 +229,10 @@ namespace TrenchBroom {
 
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupInnerGroup") {
             // see https://github.com/TrenchBroom/TrenchBroom/issues/2050
-            Model::EntityNode* outerEnt1 = new Model::EntityNode();
-            Model::EntityNode* outerEnt2 = new Model::EntityNode();
-            Model::EntityNode* innerEnt1 = new Model::EntityNode();
-            Model::EntityNode* innerEnt2 = new Model::EntityNode();
+            Model::EntityNode* outerEnt1 = new Model::EntityNode{Model::Entity{}};
+            Model::EntityNode* outerEnt2 = new Model::EntityNode{Model::Entity{}};
+            Model::EntityNode* innerEnt1 = new Model::EntityNode{Model::Entity{}};
+            Model::EntityNode* innerEnt2 = new Model::EntityNode{Model::Entity{}};
 
             addNode(*document, document->parentForNodes(), innerEnt1);
             addNode(*document, document->parentForNodes(), innerEnt2);
@@ -277,7 +282,7 @@ namespace TrenchBroom {
         }
 
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLeavesPointEntitySelected") {
-            Model::EntityNode* ent1 = new Model::EntityNode();
+            Model::EntityNode* ent1 = new Model::EntityNode{Model::Entity{}};
 
             addNode(*document, document->parentForNodes(), ent1);
             document->select(std::vector<Model::Node*> {ent1});
@@ -292,7 +297,7 @@ namespace TrenchBroom {
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupLeavesBrushEntitySelected") {
             const Model::BrushBuilder builder(document->world()->mapFormat(), document->worldBounds());
 
-            Model::EntityNode* ent1 = new Model::EntityNode();
+            Model::EntityNode* ent1 = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), ent1);
 
             Model::BrushNode* brushNode1 = new Model::BrushNode(builder.createCuboid(vm::bbox3(vm::vec3(0, 0, 0), vm::vec3(64, 64, 64)), "texture").value());
@@ -306,8 +311,8 @@ namespace TrenchBroom {
             CHECK_THAT(group->children(), Catch::Equals(std::vector<Model::Node*> {ent1}));
             CHECK_THAT(ent1->children(), Catch::Equals(std::vector<Model::Node*> { brushNode1}));
             CHECK_THAT(document->selectedNodes().nodes(), Catch::Equals(std::vector<Model::Node*> {group}));
-            CHECK(document->selectedNodes().brushesRecursively() == std::vector<Model::BrushNode*>{ brushNode1});
-            CHECK(document->selectedNodes().hasBrushesRecursively());
+            CHECK(document->allSelectedBrushNodes() == std::vector<Model::BrushNode*>{ brushNode1});
+            CHECK(document->hasAnySelectedBrushNodes());
             CHECK(!document->selectedNodes().hasBrushes());
 
             document->ungroupSelection();
@@ -318,8 +323,8 @@ namespace TrenchBroom {
 
         // https://github.com/TrenchBroom/TrenchBroom/issues/3824
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.ungroupGroupAndPointEntity") {
-            auto* ent1 = new Model::EntityNode{};
-            auto* ent2 = new Model::EntityNode{};
+            auto* ent1 = new Model::EntityNode{Model::Entity{}};
+            auto* ent2 = new Model::EntityNode{Model::Entity{}};
 
             addNode(*document, document->parentForNodes(), ent1);
             addNode(*document, document->parentForNodes(), ent2);
@@ -337,13 +342,13 @@ namespace TrenchBroom {
             document->selectAllNodes();
             document->deleteObjects();
 
-            Model::EntityNode* ent1 = new Model::EntityNode();
+            Model::EntityNode* ent1 = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), ent1);
             document->deselectAll();
             document->select(std::vector<Model::Node*> {ent1});
             Model::GroupNode* group1 = document->groupSelection("group1");
 
-            Model::EntityNode* ent2 = new Model::EntityNode();
+            Model::EntityNode* ent2 = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), ent2);
             document->deselectAll();
             document->select(std::vector<Model::Node*> {ent2});
@@ -452,7 +457,7 @@ namespace TrenchBroom {
         }
 
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.selectLinkedGroups", "[GroupNodesTest]") {
-            auto* entityNode = new Model::EntityNode{};
+            auto* entityNode = new Model::EntityNode{Model::Entity{}};
             auto* brushNode = createBrushNode();
             document->addNodes({{document->parentForNodes(), {brushNode, entityNode}}});
             document->select(brushNode);
@@ -584,7 +589,7 @@ namespace TrenchBroom {
         }
 
         TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.newWithGroupOpen") {
-            Model::EntityNode* entity = new Model::EntityNode();
+            Model::EntityNode* entity = new Model::EntityNode{Model::Entity{}};
             addNode(*document, document->parentForNodes(), entity);
             document->select(entity);
             Model::GroupNode* group = document->groupSelection("my group");
@@ -595,6 +600,100 @@ namespace TrenchBroom {
             document->newDocument(Model::MapFormat::Valve, MapDocument::DefaultWorldBounds, document->game());
 
             CHECK(document->currentGroup() == nullptr);
+        }
+
+        // https://github.com/TrenchBroom/TrenchBroom/issues/3768
+        TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.operationsOnSeveralGroupsInLinkSet", "[GroupNodesTest]") {
+            auto* brushNode = createBrushNode();
+            document->addNodes({{document->parentForNodes(), {brushNode}}});
+            document->select(brushNode);
+
+            auto* groupNode = document->groupSelection("test");
+            REQUIRE(groupNode != nullptr);
+
+            auto* linkedGroupNode = document->createLinkedDuplicate();
+            REQUIRE(linkedGroupNode != nullptr);
+            
+            document->deselectAll();
+
+            SECTION("Face selection locks other groups in link set") {
+                CHECK(!linkedGroupNode->locked());
+
+                document->select({Model::BrushFaceHandle{brushNode, 0}});
+                CHECK(linkedGroupNode->locked());
+
+                document->deselectAll();
+                CHECK(!linkedGroupNode->locked());
+            }
+
+            SECTION("Can select two linked groups and apply a texture") {
+                document->select(std::vector<Model::Node*>{groupNode, linkedGroupNode});
+
+                auto setTexture = Model::ChangeBrushFaceAttributesRequest{};
+                setTexture.setTextureName("abc");
+                CHECK(document->setFaceAttributes(setTexture));
+
+                // check that the brushes in both linked groups were textured
+                for (auto* g : std::vector<Model::GroupNode*>{groupNode, linkedGroupNode}) {
+                    auto* brush = dynamic_cast<Model::BrushNode*>(g->children().at(0));
+                    REQUIRE(brush != nullptr);
+                    
+                    auto attrs = brush->brush().face(0).attributes();
+                    CHECK(attrs.textureName() == "abc");
+                }
+            }
+
+            SECTION("Can't snap to grid with both groups selected") {
+                document->select(std::vector<Model::Node*>{groupNode, linkedGroupNode});
+
+                CHECK(document->transformObjects("", vm::translation_matrix(vm::vec3{0.5, 0.5, 0.0})));
+
+                // This could generate conflicts, because what snaps one group could misalign another
+                // group in the link set. So, just reject the change.
+                CHECK(!document->snapVertices(16.0));
+            }
+        }
+
+        // https://github.com/TrenchBroom/TrenchBroom/issues/3768
+        TEST_CASE_METHOD(MapDocumentTest, "GroupNodesTest.operationsOnSeveralGroupsInLinkSetWithPointEntities", "[GroupNodesTest]") {
+            {
+                auto* entityNode = new Model::EntityNode{Model::Entity{}};
+                document->addNodes({{document->parentForNodes(), {entityNode}}});
+                document->select(entityNode);
+            }
+
+            auto* groupNode = document->groupSelection("test");
+            auto* linkedGroupNode1 = document->createLinkedDuplicate();
+            auto* linkedGroupNode2 = document->createLinkedDuplicate();
+
+            REQUIRE(groupNode != nullptr);
+            REQUIRE(linkedGroupNode1 != nullptr);
+            REQUIRE(linkedGroupNode2 != nullptr);
+                        
+            document->deselectAll();
+
+            SECTION("Attempt to set a property with 2 out of 3 groups selected") {
+                document->select(std::vector<Model::Node*>{groupNode, linkedGroupNode1});
+
+                // Current design is to reject this because it's modifying entities from multiple groups in a link set.
+                // While in this case the change isn't conflicting, some entity changes are,
+                // e.g. unprotecting a property with 2 linked groups selected, where entities have different values
+                // for that protected property.
+                //
+                // Additionally, the use case for editing entity properties with the entire map selected seems unlikely.
+                CHECK(!document->setProperty("key", "value"));
+
+                auto* groupNodeEntity = dynamic_cast<Model::EntityNode*>(groupNode->children().at(0));
+                auto* linkedEntityNode1 = dynamic_cast<Model::EntityNode*>(linkedGroupNode1->children().at(0));
+                auto* linkedEntityNode2 = dynamic_cast<Model::EntityNode*>(linkedGroupNode2->children().at(0));
+                REQUIRE(groupNodeEntity != nullptr);
+                REQUIRE(linkedEntityNode1 != nullptr);
+                REQUIRE(linkedEntityNode2 != nullptr);
+
+                CHECK(!groupNodeEntity->entity().hasProperty("key"));
+                CHECK(!linkedEntityNode1->entity().hasProperty("key"));
+                CHECK(!linkedEntityNode2->entity().hasProperty("key"));
+            }
         }
     }
 }

@@ -73,6 +73,7 @@ namespace TrenchBroom {
         class MapDocument;
         class MapViewToolBox;
         class Selection;
+        class SignalDelayer;
         class Tool;
         class UndoableCommand;
 
@@ -98,6 +99,8 @@ namespace TrenchBroom {
              */
             bool m_isCurrent;
 
+            SignalDelayer* m_updateActionStatesSignalDelayer;
+
             NotifierConnection m_notifierConnection;
         private: // shortcuts
             std::vector<std::pair<QShortcut*, const Action*>> m_shortcuts;
@@ -122,6 +125,7 @@ namespace TrenchBroom {
         public:
             void setIsCurrent(bool isCurrent);
         private:
+            void bindEvents();
             void connectObservers();
 
             void createActionsAndUpdatePicking();
@@ -144,6 +148,7 @@ namespace TrenchBroom {
             void createActions();
             void updateActionBindings();
             void updateActionStates();
+            void updateActionStatesDelayed();
         public:
             void triggerAction(const Action& action);
             void triggerAmbiguousAction(const QString& label);

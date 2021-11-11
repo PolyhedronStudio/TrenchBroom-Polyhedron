@@ -210,7 +210,7 @@ namespace TrenchBroom {
                 },
                 [&](auto&& thisLambda, EntityNode* entityNode) {
                     auto entity = entityNode->entity();
-                    entity.transform(transformation);
+                    entity.transform(entityNode->entityPropertyConfig(), transformation);
                     entityNode->setEntity(std::move(entity));
 
                     entityNode->visitChildren(thisLambda);
@@ -270,6 +270,11 @@ namespace TrenchBroom {
             checkFaceTexCoordSystem(faces[5], expectParallel);
         }
 
+        void setLinkedGroupId(GroupNode& groupNode, std::string linkedGroupId) {
+            auto group = groupNode.group();
+            group.setLinkedGroupId(std::move(linkedGroupId));
+            groupNode.setGroup(std::move(group));
+        }
     }
 
     namespace View {

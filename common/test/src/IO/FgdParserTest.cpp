@@ -744,10 +744,10 @@ namespace TrenchBroom {
         TEST_CASE("FgdParserTest.parseLegacyStaticModelDefinition", "[FgdParserTest]") {
             static const std::string ModelDefinition = "\":maps/b_shell0.bsp\", \":maps/b_shell1.bsp\" spawnflags = 1";
 
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell0.bsp")),
+            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell0.bsp"), 0, 0),
                                              ModelDefinition,
                                              FgdModelDefinitionTemplate);
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp")),
+            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp"), 0, 0),
                                              ModelDefinition,
                                              FgdModelDefinitionTemplate,
                                              "{ 'spawnflags': 1 }");
@@ -756,7 +756,7 @@ namespace TrenchBroom {
         TEST_CASE("FgdParserTest.parseLegacyDynamicModelDefinition", "[FgdParserTest]") {
             static const std::string ModelDefinition = "pathKey = \"model\" skinKey = \"skin\" frameKey = \"frame\"";
 
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp")),
+            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp"), 0, 0),
                                              ModelDefinition,
                                              FgdModelDefinitionTemplate,
                                              "{ 'model': 'maps/b_shell1.bsp' }");
@@ -766,33 +766,12 @@ namespace TrenchBroom {
                                              "{ 'model': 'maps/b_shell1.bsp', 'skin': 1, 'frame': 2 }");
         }
 
-        TEST_CASE("FgdParserTest.parseELStaticModelDefinition", "[FgdParserTest]") {
+        TEST_CASE("FgdParserTest.parseELModelDefinition", "[FgdParserTest]") {
             static const std::string ModelDefinition = "{{ spawnflags == 1 -> 'maps/b_shell1.bsp', 'maps/b_shell0.bsp' }}";
 
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell0.bsp")),
+            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell0.bsp"), 0, 0),
                                              ModelDefinition,
                                              FgdModelDefinitionTemplate);
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp")),
-                                             ModelDefinition,
-                                             FgdModelDefinitionTemplate,
-                                             "{ 'spawnflags': 1 }");
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell0.bsp")),
-                                             ModelDefinition,
-                                             FgdModelDefinitionTemplate,
-                                             "{ 'spawnflags': 2 }");
-        }
-
-        TEST_CASE("FgdParserTest.parseELDynamicModelDefinition", "[FgdParserTest]") {
-            static const std::string ModelDefinition = "{ 'path': model, 'skin': skin, 'frame': frame }";
-
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp")),
-                                             ModelDefinition,
-                                             FgdModelDefinitionTemplate,
-                                             "{ 'model': 'maps/b_shell1.bsp' }");
-            assertModelDefinition<FgdParser>(Assets::ModelSpecification(IO::Path("maps/b_shell1.bsp"), 1, 2),
-                                             ModelDefinition,
-                                             FgdModelDefinitionTemplate,
-                                             "{ 'model': 'maps/b_shell1.bsp', 'skin': 1, 'frame': 2 }");
         }
 
         TEST_CASE("FgdParserTest.parseLegacyModelWithParseError", "[FgdParserTest]") {
@@ -832,6 +811,38 @@ decor_goddess_statue : "Goddess Statue" [])";
             CHECK(definition->bounds() == vm::bbox3d(vm::vec3d(-32.0, -32.0, 0.0), vm::vec3d(32.0, 32.0, 256.0)));
 
             kdl::vec_clear_and_delete(definitions);
+        }
+
+        TEST_CASE("FgdParserTest.parseInvalidModel", "[FgdParserTest]") {
+            const std::string file = R"(@PointClass
+size(-16 -16 -24, 16 16 40)
+model({1}) =
+decor_goddess_statue : "Goddess Statue" [])";
+
+            const Color defaultColor(1.0f, 1.0f, 1.0f, 1.0f);
+            FgdParser parser(file, defaultColor);
+
+            CHECK_THROWS_WITH([&]() {
+                TestParserStatus status;
+                auto definitions = parser.parseDefinitions(status);
+                kdl::vec_clear_and_delete(definitions);
+            }(), Catch::Matchers::StartsWith("At line 3, column 8:"));
+        }
+
+        TEST_CASE("FgdParserTest.parseErrorAfterModel", "[FgdParserTest]") {
+            const std::string file = R"(@PointClass
+size(-16 -16 -24, 16 16 40)
+model({"path"
+       : ":progs/goddess-statue.mdl" }) = decor_goddess_statue ; "Goddess Statue" [])";
+
+            const Color defaultColor(1.0f, 1.0f, 1.0f, 1.0f);
+            FgdParser parser(file, defaultColor);
+
+            CHECK_THROWS_WITH([&]() {
+                TestParserStatus status;
+                auto definitions = parser.parseDefinitions(status);
+                kdl::vec_clear_and_delete(definitions);
+            }(), Catch::Matchers::StartsWith("At line 4, column 64:"));
         }
 
         TEST_CASE("FgdParserTest.parseInclude", "[FgdParserTest]") {

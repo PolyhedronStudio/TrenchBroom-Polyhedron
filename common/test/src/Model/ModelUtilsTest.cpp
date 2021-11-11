@@ -54,7 +54,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* groupNode = new GroupNode{Group{"group"}};
@@ -81,7 +81,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -110,7 +110,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -162,11 +162,84 @@ namespace TrenchBroom {
             }
         }
 
+        TEST_CASE("ModelUtils.findLinkedGroups") {
+            constexpr auto worldBounds = vm::bbox3d{8192.0};
+            constexpr auto mapFormat = MapFormat::Quake3;
+
+            auto worldNode = WorldNode{{}, {}, mapFormat};
+
+            auto* groupNode1 = new GroupNode{Group{"Group 1"}};
+            auto* groupNode2 = new GroupNode{Group{"Group 2"}};
+            auto* groupNode3 = new GroupNode{Group{"Group 3"}};
+
+            setLinkedGroupId(*groupNode1, "group1");
+            setLinkedGroupId(*groupNode2, "group2");
+
+            auto* linkedGroupNode1_1 = static_cast<Model::GroupNode*>(groupNode1->cloneRecursively(worldBounds));
+
+            auto* linkedGroupNode2_1 = static_cast<Model::GroupNode*>(groupNode2->cloneRecursively(worldBounds));
+            auto* linkedGroupNode2_2 = static_cast<Model::GroupNode*>(groupNode2->cloneRecursively(worldBounds));
+
+            worldNode.defaultLayer()->addChild(groupNode1);
+            worldNode.defaultLayer()->addChild(groupNode2);
+            worldNode.defaultLayer()->addChild(groupNode3);
+            worldNode.defaultLayer()->addChild(linkedGroupNode1_1);
+            worldNode.defaultLayer()->addChild(linkedGroupNode2_1);
+            worldNode.defaultLayer()->addChild(linkedGroupNode2_2);
+
+            auto* entityNode = new EntityNode{Entity{}};
+            worldNode.defaultLayer()->addChild(entityNode);
+
+            CHECK_THAT(findLinkedGroups(worldNode, "asdf"), Catch::Matchers::UnorderedEquals(std::vector<Model::GroupNode*>{}));
+            CHECK_THAT(findLinkedGroups(worldNode, "group1"), Catch::Matchers::UnorderedEquals(std::vector<Model::GroupNode*>{
+                groupNode1, linkedGroupNode1_1
+            }));
+            CHECK_THAT(findLinkedGroups(worldNode, "group2"), Catch::Matchers::UnorderedEquals(std::vector<Model::GroupNode*>{
+                groupNode2, linkedGroupNode2_1, linkedGroupNode2_2
+            }));
+        }
+
+        TEST_CASE("ModelUtils.findAllLinkedGroups") {
+            constexpr auto worldBounds = vm::bbox3d{8192.0};
+            constexpr auto mapFormat = MapFormat::Quake3;
+
+            auto worldNode = WorldNode{{}, {}, mapFormat};
+
+            CHECK_THAT(findAllLinkedGroups(worldNode), Catch::Matchers::UnorderedEquals(std::vector<Model::GroupNode*>{}));
+
+            auto* groupNode1 = new GroupNode{Group{"Group 1"}};
+            auto* groupNode2 = new GroupNode{Group{"Group 2"}};
+            auto* groupNode3 = new GroupNode{Group{"Group 3"}};
+
+            setLinkedGroupId(*groupNode1, "group1");
+            setLinkedGroupId(*groupNode2, "group2");
+
+            auto* linkedGroupNode1_1 = static_cast<Model::GroupNode*>(groupNode1->cloneRecursively(worldBounds));
+
+            auto* linkedGroupNode2_1 = static_cast<Model::GroupNode*>(groupNode2->cloneRecursively(worldBounds));
+            auto* linkedGroupNode2_2 = static_cast<Model::GroupNode*>(groupNode2->cloneRecursively(worldBounds));
+
+            worldNode.defaultLayer()->addChild(groupNode1);
+            worldNode.defaultLayer()->addChild(groupNode2);
+            worldNode.defaultLayer()->addChild(groupNode3);
+            worldNode.defaultLayer()->addChild(linkedGroupNode1_1);
+            worldNode.defaultLayer()->addChild(linkedGroupNode2_1);
+            worldNode.defaultLayer()->addChild(linkedGroupNode2_2);
+
+            auto* entityNode = new EntityNode{Entity{}};
+            worldNode.defaultLayer()->addChild(entityNode);
+
+            CHECK_THAT(findAllLinkedGroups(worldNode), Catch::Matchers::UnorderedEquals(std::vector<Model::GroupNode*>{
+                groupNode1, linkedGroupNode1_1,
+                groupNode2, linkedGroupNode2_1, linkedGroupNode2_2
+            }));
+        }
+
         TEST_CASE("ModelUtils.collectWithParents") {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -197,7 +270,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -239,7 +312,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto layerNode = LayerNode{Layer{"layer"}};
             auto groupNode = GroupNode{Group{"outer"}};
@@ -312,7 +385,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto layerNode = LayerNode{Layer{"layer"}};
             auto groupNode = GroupNode{Group{"outer"}};
@@ -384,7 +457,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -446,7 +519,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -490,7 +563,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -521,7 +594,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto* layerNode = new LayerNode{Layer{"layer"}};
             auto* outerGroupNode = new GroupNode{Group{"outer"}};
@@ -552,7 +625,7 @@ namespace TrenchBroom {
             constexpr auto worldBounds = vm::bbox3d{8192.0};
             constexpr auto mapFormat = MapFormat::Quake3;
 
-            auto worldNode = WorldNode{Entity{}, mapFormat};
+            auto worldNode = WorldNode{{}, {}, mapFormat};
             
             auto layerNode = LayerNode{Layer{"layer"}};
             auto groupNode = GroupNode{Group{"outer"}};

@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "IO/Path.h"
 #include "Model/MapFormat.h"
 
 #include <memory>
@@ -39,14 +40,20 @@ namespace TrenchBroom {
     namespace Model {
         class CompilationConfig;
         class Game;
-        class GameConfig;
+        struct GameConfig;
         class GameEngineConfig;
+
+        struct GamePathConfig {
+            std::vector<IO::Path> gameConfigSearchDirs;
+            IO::Path userGameDir;
+        };
 
         class GameFactory {
         private:
             using ConfigMap = std::map<std::string, GameConfig>;
             using GamePathMap = std::map<std::string, Preference<IO::Path>>;
 
+            IO::Path m_userGameDir;
             std::unique_ptr<IO::WritableDiskFileSystem> m_configFS;
 
             std::vector<std::string> m_names;
@@ -67,10 +74,12 @@ namespace TrenchBroom {
              * but loading game configurations continues. The string list is then thrown and should be caught by the
              * caller to inform the user of any errors.
              *
+             * The given path config is used to build the file systems.
+             *
              * @throw FileSystemException if the file system cannot be built.
              * @throw std::vector<std::string> if loading game configurations fails
              */
-            void initialize();
+            void initialize(const GamePathConfig& gamePathConfig);
             /**
              * Saves the game engine configurations for the game with the given name.
              *
@@ -116,9 +125,18 @@ namespace TrenchBroom {
              * format.
              */
             std::pair<std::string, MapFormat> detectGame(const IO::Path& path) const;
+
+            /**
+             * Returns the directory for user game configurations.
+             * Solely for showing these to the user.
+             *
+             * Must not be called before initialize() was called.
+             */
+            const IO::Path& userGameConfigsPath() const;
+
         private:
             GameFactory();
-            void initializeFileSystem();
+            void initializeFileSystem(const GamePathConfig& gamePathConfig);
             void loadGameConfigs();
             void loadGameConfig(const IO::Path& path);
             void doLoadGameConfig(const IO::Path& path);

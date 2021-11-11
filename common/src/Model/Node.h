@@ -37,6 +37,7 @@ namespace TrenchBroom {
     namespace Model {
         class EditorContext;
         class EntityNodeBase;
+        struct EntityPropertyConfig;
         class ConstNodeVisitor;
         class Issue;
         class IssueGenerator;
@@ -65,6 +66,7 @@ namespace TrenchBroom {
 
             VisibilityState m_visibilityState;
             LockState m_lockState;
+            bool m_lockedByOtherSelection;
 
             mutable size_t m_lineNumber;
             mutable size_t m_lineCount;
@@ -241,9 +243,9 @@ namespace TrenchBroom {
         protected: // notification for parents
             class NotifyNodeChange {
             private:
-                Node* m_node;
+                Node& m_node;
             public:
-                explicit NotifyNodeChange(Node* node);
+                explicit NotifyNodeChange(Node& node);
                 ~NotifyNodeChange();
             };
 
@@ -254,9 +256,9 @@ namespace TrenchBroom {
             friend class NotifyPhysicalBoundsChange;
             class NotifyPhysicalBoundsChange {
             private:
-                Node* m_node;
+                Node& m_node;
             public:
-                explicit NotifyPhysicalBoundsChange(Node* node);
+                explicit NotifyPhysicalBoundsChange(Node& node);
                 ~NotifyPhysicalBoundsChange();
             };
             void nodePhysicalBoundsDidChange();
@@ -319,6 +321,8 @@ namespace TrenchBroom {
             bool locked() const;
             LockState lockState() const;
             bool setLockState(LockState lockState);
+            bool lockedByOtherSelection() const;
+            void setLockedByOtherSelection(bool lockedByOtherSelection);
         public: // picking
             void pick(const EditorContext& editorContext, const vm::ray3& ray, PickResult& result);
             void findNodesContaining(const vm::vec3& point, std::vector<Node*>& result);
@@ -439,6 +443,8 @@ namespace TrenchBroom {
             void visitChildren(const L& lambda) const {
                 visitAll(m_children, lambda);
             }
+        public: // entity property configuration access
+            const EntityPropertyConfig& entityPropertyConfig() const;
         protected: // index management
             void findEntityNodesWithProperty(const std::string& key, const std::string& value, std::vector<EntityNodeBase*>& result) const;
             void findEntityNodesWithNumberedProperty(const std::string& prefix, const std::string& value, std::vector<EntityNodeBase*>& result) const;
@@ -494,6 +500,8 @@ namespace TrenchBroom {
 
             virtual void doAccept(NodeVisitor& visitor) = 0;
             virtual void doAccept(ConstNodeVisitor& visitor) const = 0;
+
+            virtual const EntityPropertyConfig& doGetEntityPropertyConfig() const;
 
             virtual void doFindEntityNodesWithProperty(const std::string& key, const std::string& value, std::vector<EntityNodeBase*>& result) const;
             virtual void doFindEntityNodesWithNumberedProperty(const std::string& prefix, const std::string& value, std::vector<EntityNodeBase*>& result) const;

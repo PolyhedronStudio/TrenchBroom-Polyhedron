@@ -103,10 +103,17 @@ namespace TrenchBroom {
         void MapDocumentCommandFacade::performSelect(const std::vector<Model::BrushFaceHandle>& faces) {
             selectionWillChangeNotifier();
 
-            std::vector<Model::BrushFaceHandle> selected;
-            selected.reserve(faces.size());
+            const auto constrained = Model::faceSelectionWithLinkedGroupConstraints(*m_world.get(), faces);
 
-            for (const auto& handle : faces) {
+            for (Model::GroupNode* node : constrained.groupsToLock) {
+                node->setLockedByOtherSelection(true);
+            }
+            nodeLockingDidChangeNotifier(kdl::vec_element_cast<Model::Node*>(constrained.groupsToLock));
+
+            std::vector<Model::BrushFaceHandle> selected;
+            selected.reserve(constrained.facesToSelect.size());
+
+            for (const auto& handle : constrained.facesToSelect) {
                 Model::BrushNode* node = handle.node();
                 const Model::BrushFace& face = handle.face();
                 if (!face.selected() && m_editorContext->selectable(node, face)) {
@@ -165,6 +172,8 @@ namespace TrenchBroom {
         }
 
         void MapDocumentCommandFacade::performDeselect(const std::vector<Model::BrushFaceHandle>& faces) {
+            const auto implicitlyLockedGroups = kdl::vector_set<Model::GroupNode*>{kdl::vec_filter(Model::findAllLinkedGroups(*m_world.get()), [](const auto* group) { return group->lockedByOtherSelection(); })};
+
             selectionWillChangeNotifier();
 
             std::vector<Model::BrushFaceHandle> deselected;
@@ -185,46 +194,31 @@ namespace TrenchBroom {
             selection.addDeselectedBrushFaces(deselected);
 
             selectionDidChangeNotifier(selection);
+
+            // Selection change is done. Next, update implicit locking of linked groups.
+            // The strategy is to figure out what needs to be locked given m_selectedBrushFaces, and then un-implicitly-lock all other linked groups.
+            const auto groupsToLock = kdl::vector_set<Model::GroupNode*>{Model::faceSelectionWithLinkedGroupConstraints(*m_world.get(), m_selectedBrushFaces).groupsToLock};
+            for (Model::GroupNode* node : groupsToLock) {
+                node->setLockedByOtherSelection(true);
+            }
+            nodeLockingDidChangeNotifier(kdl::vec_element_cast<Model::Node*>(groupsToLock.get_data()));
+
+            const auto groupsToUnlock = kdl::set_difference(implicitlyLockedGroups, groupsToLock);
+            for (Model::GroupNode* node : groupsToUnlock) {
+                node->setLockedByOtherSelection(false);
+            }
+            nodeLockingDidChangeNotifier(kdl::vec_element_cast<Model::Node*>(groupsToUnlock));
         }
 
         void MapDocumentCommandFacade::performDeselectAll() {
-            if (hasSelectedNodes())
-                deselectAllNodes();
-            if (hasSelectedBrushFaces())
-                deselectAllBrushFaces();
-        }
-
-        void MapDocumentCommandFacade::deselectAllNodes() {
-            selectionWillChangeNotifier();
-            updateLastSelectionBounds();
-
-            for (Model::Node* node : m_selectedNodes) {
-                node->deselect();
+            if (hasSelectedNodes()) {
+                const auto previousSelection = m_selectedNodes.nodes();
+                performDeselect(previousSelection);
             }
-
-            Selection selection;
-            selection.addDeselectedNodes(m_selectedNodes.nodes());
-
-            m_selectedNodes.clear();
-
-            selectionDidChangeNotifier(selection);
-            invalidateSelectionBounds();
-        }
-
-        void MapDocumentCommandFacade::deselectAllBrushFaces() {
-            selectionWillChangeNotifier();
-
-            for (const auto& handle : m_selectedBrushFaces) {
-                Model::BrushNode* node = handle.node();
-                node->deselectFace(handle.faceIndex());
+            if (hasSelectedBrushFaces()) {
+                const auto previousSelection = m_selectedBrushFaces;
+                performDeselect(previousSelection);
             }
-
-            Selection selection;
-            selection.addDeselectedBrushFaces(m_selectedBrushFaces);
-
-            m_selectedBrushFaces.clear();
-
-            selectionDidChangeNotifier(selection);
         }
 
         void MapDocumentCommandFacade::performAddNodes(const std::map<Model::Node*, std::vector<Model::Node*>>& nodes) {
@@ -262,6 +256,14 @@ namespace TrenchBroom {
             invalidateSelectionBounds();
         }
 
+        static std::vector<Model::Node*> collectOldChildren(const std::vector<std::pair<Model::Node*, std::vector<std::unique_ptr<Model::Node>>>>& nodes) {
+            std::vector<Model::Node*> result;
+            for (auto& [parent, newChildren] : nodes) {
+                result = kdl::vec_concat(std::move(result), parent->children());
+            }
+            return result;
+        }
+
         std::vector<std::pair<Model::Node*, std::vector<std::unique_ptr<Model::Node>>>> MapDocumentCommandFacade::performReplaceChildren(std::vector<std::pair<Model::Node*, std::vector<std::unique_ptr<Model::Node>>>> nodes) {
             if (nodes.empty()) {
                 return {};
@@ -270,18 +272,16 @@ namespace TrenchBroom {
             const std::vector<Model::Node*> parents = collectParents(nodes);
             NotifyBeforeAndAfter notifyParents(nodesWillChangeNotifier, nodesDidChangeNotifier, parents);
 
-            const std::vector<Model::Node*> allChildren = collectChildren(nodes);
-            NotifyBeforeAndAfter notifyChildren(nodesWillBeRemovedNotifier, nodesWereRemovedNotifier, allChildren);
+            const std::vector<Model::Node*> allOldChildren = collectOldChildren(nodes);
+            NotifyBeforeAndAfter notifyChildren(nodesWillBeRemovedNotifier, nodesWereRemovedNotifier, allOldChildren);
 
             auto result = std::vector<std::pair<Model::Node*, std::vector<std::unique_ptr<Model::Node>>>>{};
-            auto allOldChildren = std::vector<Model::Node*>{};
             auto allNewChildren = std::vector<Model::Node*>{};
 
             for (auto& [parent, newChildren] : nodes) {
                 allNewChildren = kdl::vec_concat(std::move(allNewChildren), kdl::vec_transform(newChildren, [](auto& child) { return child.get(); }));
                 
                 auto oldChildren = parent->replaceChildren(std::move(newChildren));
-                allOldChildren = kdl::vec_concat(std::move(allOldChildren), kdl::vec_transform(oldChildren, [](auto& child) { return child.get(); }));
 
                 result.emplace_back(parent, std::move(oldChildren));
             }
@@ -481,16 +481,6 @@ namespace TrenchBroom {
             m_notifierConnection += m_commandProcessor->commandUndoFailedNotifier.connect(commandUndoFailedNotifier);
             m_notifierConnection += m_commandProcessor->transactionDoneNotifier.connect(transactionDoneNotifier);
             m_notifierConnection += m_commandProcessor->transactionUndoneNotifier.connect(transactionUndoneNotifier);
-            m_notifierConnection += documentWasNewedNotifier.connect(this, &MapDocumentCommandFacade::documentWasNewed);
-            m_notifierConnection += documentWasLoadedNotifier.connect(this, &MapDocumentCommandFacade::documentWasLoaded);
-        }
-
-        void MapDocumentCommandFacade::documentWasNewed(MapDocument*) {
-            m_commandProcessor->clear();
-        }
-
-        void MapDocumentCommandFacade::documentWasLoaded(MapDocument*) {
-            m_commandProcessor->clear();
         }
 
         bool MapDocumentCommandFacade::doCanUndoCommand() const {
@@ -515,6 +505,10 @@ namespace TrenchBroom {
 
         void MapDocumentCommandFacade::doRedoCommand() {
             m_commandProcessor->redo();
+        }
+
+        void MapDocumentCommandFacade::doClearCommandProcessor() {
+            m_commandProcessor->clear();
         }
 
         void MapDocumentCommandFacade::doStartTransaction(const std::string& name) {

@@ -19,6 +19,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/EL/ELExceptions.cpp
         ${COMMON_SOURCE_DIR}/EL/EvaluationContext.cpp
         ${COMMON_SOURCE_DIR}/EL/Expression.cpp
+        ${COMMON_SOURCE_DIR}/EL/Expressions.cpp
         ${COMMON_SOURCE_DIR}/EL/Interpolator.cpp
         ${COMMON_SOURCE_DIR}/EL/Types.cpp
         ${COMMON_SOURCE_DIR}/EL/Value.cpp
@@ -55,6 +56,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/IO/ImageFileSystem.cpp
         ${COMMON_SOURCE_DIR}/IO/ImageLoader.cpp
         ${COMMON_SOURCE_DIR}/IO/ImageLoaderImpl.cpp
+        ${COMMON_SOURCE_DIR}/IO/ImageSpriteParser.cpp
         ${COMMON_SOURCE_DIR}/IO/IOUtils.cpp
         ${COMMON_SOURCE_DIR}/IO/LegacyModelDefinitionParser.cpp
         ${COMMON_SOURCE_DIR}/IO/M8TextureReader.cpp
@@ -81,6 +83,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/IO/ResourceUtils.cpp
         ${COMMON_SOURCE_DIR}/IO/SimpleParserStatus.cpp
         ${COMMON_SOURCE_DIR}/IO/SkinLoader.cpp
+        ${COMMON_SOURCE_DIR}/IO/SprParser.cpp
         ${COMMON_SOURCE_DIR}/IO/StandardMapParser.cpp
         ${COMMON_SOURCE_DIR}/IO/SystemPaths.cpp
         ${COMMON_SOURCE_DIR}/IO/TextureCollectionLoader.cpp
@@ -261,6 +264,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/View/CameraLinkHelper.cpp
         ${COMMON_SOURCE_DIR}/View/CameraTool2D.cpp
         ${COMMON_SOURCE_DIR}/View/CameraTool3D.cpp
+        ${COMMON_SOURCE_DIR}/View/CellLayout.cpp
         ${COMMON_SOURCE_DIR}/View/CellView.cpp
         ${COMMON_SOURCE_DIR}/View/ChoosePathTypeDialog.cpp
         ${COMMON_SOURCE_DIR}/View/ClickableLabel.cpp
@@ -405,6 +409,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/View/SetVisibilityCommand.cpp
         ${COMMON_SOURCE_DIR}/View/ShearObjectsTool.cpp
         ${COMMON_SOURCE_DIR}/View/ShearObjectsToolController.cpp
+        ${COMMON_SOURCE_DIR}/View/SignalDelayer.cpp
         ${COMMON_SOURCE_DIR}/View/SliderWithLabel.cpp
         ${COMMON_SOURCE_DIR}/View/SmartChoiceEditor.cpp
         ${COMMON_SOURCE_DIR}/View/SmartTypeEditorMatcher.cpp
@@ -464,6 +469,7 @@ set(COMMON_SOURCE
         ${COMMON_SOURCE_DIR}/PreferenceManager.cpp
         ${COMMON_SOURCE_DIR}/Preference.cpp
         ${COMMON_SOURCE_DIR}/Preferences.cpp
+        ${COMMON_SOURCE_DIR}/Thread.cpp
         ${COMMON_SOURCE_DIR}/TrenchBroomApp.cpp
         ${COMMON_SOURCE_DIR}/TrenchBroomStackWalker.cpp
         ${COMMON_SOURCE_DIR}/Uuid.cpp
@@ -493,6 +499,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/EL/ELExceptions.h
         ${COMMON_SOURCE_DIR}/EL/EvaluationContext.h
         ${COMMON_SOURCE_DIR}/EL/Expression.h
+        ${COMMON_SOURCE_DIR}/EL/Expressions.h
         ${COMMON_SOURCE_DIR}/EL/Interpolator.h
         ${COMMON_SOURCE_DIR}/EL/Types.h
         ${COMMON_SOURCE_DIR}/EL/Value.h
@@ -530,6 +537,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/ImageLoader.h
         ${COMMON_SOURCE_DIR}/IO/ImageLoaderImpl.h
         ${COMMON_SOURCE_DIR}/IO/IOUtils.h
+        ${COMMON_SOURCE_DIR}/IO/ImageSpriteParser.h
         ${COMMON_SOURCE_DIR}/IO/LegacyModelDefinitionParser.h
         ${COMMON_SOURCE_DIR}/IO/M8TextureReader.h
         ${COMMON_SOURCE_DIR}/IO/MapFileSerializer.h
@@ -557,6 +565,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/IO/ResourceUtils.h
         ${COMMON_SOURCE_DIR}/IO/SimpleParserStatus.h
         ${COMMON_SOURCE_DIR}/IO/SkinLoader.h
+        ${COMMON_SOURCE_DIR}/IO/SprParser.h
         ${COMMON_SOURCE_DIR}/IO/StandardMapParser.h
         ${COMMON_SOURCE_DIR}/IO/SystemPaths.h
         ${COMMON_SOURCE_DIR}/IO/TextureCollectionLoader.h
@@ -917,6 +926,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/View/SetVisibilityCommand.h
         ${COMMON_SOURCE_DIR}/View/ShearObjectsTool.h
         ${COMMON_SOURCE_DIR}/View/ShearObjectsToolController.h
+        ${COMMON_SOURCE_DIR}/View/SignalDelayer.h
         ${COMMON_SOURCE_DIR}/View/SliderWithLabel.h
         ${COMMON_SOURCE_DIR}/View/SmartChoiceEditor.h
         ${COMMON_SOURCE_DIR}/View/SmartTypeEditorMatcher.h
@@ -982,6 +992,7 @@ set(COMMON_HEADER
         ${COMMON_SOURCE_DIR}/PreferenceManager.h
         ${COMMON_SOURCE_DIR}/Preferences.h
         ${COMMON_SOURCE_DIR}/RecoverableExceptions.h
+        ${COMMON_SOURCE_DIR}/Thread.h
         ${COMMON_SOURCE_DIR}/TrenchBroomApp.h
         ${COMMON_SOURCE_DIR}/TrenchBroomStackWalker.h
         ${COMMON_SOURCE_DIR}/Uuid.h

@@ -68,9 +68,6 @@ namespace TrenchBroom {
             void performDeselect(const std::vector<Model::Node*>& nodes);
             void performDeselect(const std::vector<Model::BrushFaceHandle>& faces);
             void performDeselectAll();
-        private:
-            void deselectAllNodes();
-            void deselectAllBrushFaces();
         public: // adding and removing nodes
             void performAddNodes(const std::map<Model::Node*, std::vector<Model::Node*>>& nodes);
             void performRemoveNodes(const std::map<Model::Node*, std::vector<Model::Node*>>& nodes);
@@ -117,6 +114,7 @@ namespace TrenchBroom {
             void doUndoCommand() override;
             void doRedoCommand() override;
 
+            void doClearCommandProcessor() override;
             void doStartTransaction(const std::string& name) override;
             void doCommitTransaction() override;
             void doRollbackTransaction() override;

@@ -55,7 +55,7 @@
 namespace TrenchBroom {
     namespace IO {
         TEST_CASE("NodeWriterTest.writeEmptyMap", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -72,9 +72,9 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writeWorldspawn", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity({
+            Model::WorldNode map({}, {
                 {"message", "holy damn"}
-            }), Model::MapFormat::Standard);
+            }, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -92,7 +92,7 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writeDefaultLayerProperties", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
             map.defaultLayer()->setVisibilityState(Model::VisibilityState::Hidden);
             map.defaultLayer()->setLockState(Model::LockState::Locked);
 
@@ -122,7 +122,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeDaikatanaMap", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Daikatana);
+            Model::WorldNode map({}, {}, Model::MapFormat::Daikatana);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
             Model::Brush brush1 = builder.createCube(64.0, "none").value();
@@ -172,15 +172,38 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeQuake2ValveMap", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Quake2_Valve);
+            Model::WorldNode map({}, {}, Model::MapFormat::Quake2_Valve);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
-            Model::Brush brush1 = builder.createCube(64.0, "none").value();
-            for (Model::BrushFace& face : brush1.faces()) {
-                Model::BrushFaceAttributes attributes = face.attributes();
-                attributes.setSurfaceValue(32.0f);
-                face.setAttributes(attributes);
+            Model::Brush brush1 = builder.createCube(64.0, "e1u1/alarm0").value();
+
+            // set +Z face to e1u1/brwater with contents 0, flags 0, value 0
+            {
+                auto index = brush1.findFace(vm::vec3::pos_z());
+                REQUIRE(index);
+
+                auto& face = brush1.face(*index);
+                auto attribs = face.attributes();
+                attribs.setTextureName("e1u1/brwater");
+                attribs.setSurfaceContents(0);
+                attribs.setSurfaceFlags(0);
+                attribs.setSurfaceValue(0.0f);
+                face.setAttributes(attribs);
             }
+            // set -Z face to e1u1/brlava with contents 8, flags 9, value 700
+            {
+                auto index = brush1.findFace(vm::vec3::neg_z());
+                REQUIRE(index);
+
+                auto& face = brush1.face(*index);
+                auto attribs = face.attributes();
+                attribs.setTextureName("e1u1/brlava");
+                attribs.setSurfaceContents(8);
+                attribs.setSurfaceFlags(9);
+                attribs.setSurfaceValue(700.0f);
+                face.setAttributes(attribs);
+            }
+            // other faces are e1u1/alarm0 with unset contents/flags/value
             
             Model::BrushNode* brushNode1 = new Model::BrushNode(std::move(brush1));
             map.defaultLayer()->addChild(brushNode1);
@@ -196,12 +219,12 @@ R"(// entity 0
 "classname" "worldspawn"
 // brush 0
 {
-( -32 -32 -32 ) ( -32 -31 -32 ) ( -32 -32 -31 ) none [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 32
-( -32 -32 -32 ) ( -32 -32 -31 ) ( -31 -32 -32 ) none [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 32
-( -32 -32 -32 ) ( -31 -32 -32 ) ( -32 -31 -32 ) none [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 0 0 32
-( 32 32 32 ) ( 32 33 32 ) ( 33 32 32 ) none [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 0 0 32
-( 32 32 32 ) ( 33 32 32 ) ( 32 32 33 ) none [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 32
-( 32 32 32 ) ( 32 32 33 ) ( 32 33 32 ) none [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 32
+( -32 -32 -32 ) ( -32 -31 -32 ) ( -32 -32 -31 ) e1u1/alarm0 [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -32 -32 -32 ) ( -32 -32 -31 ) ( -31 -32 -32 ) e1u1/alarm0 [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -32 -32 -32 ) ( -31 -32 -32 ) ( -32 -31 -32 ) e1u1/brlava [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 8 9 700
+( 32 32 32 ) ( 32 33 32 ) ( 33 32 32 ) e1u1/brwater [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 0 0 0
+( 32 32 32 ) ( 33 32 32 ) ( 32 32 33 ) e1u1/alarm0 [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 32 32 32 ) ( 32 32 33 ) ( 32 33 32 ) e1u1/alarm0 [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
 }
 }
 )";
@@ -212,7 +235,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeQuake3ValveMap", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Quake3_Valve);
+            Model::WorldNode map({}, {}, Model::MapFormat::Quake3_Valve);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
             Model::BrushNode* brushNode1 = new Model::BrushNode(builder.createCube(64.0, "none").value());
@@ -229,12 +252,12 @@ R"(// entity 0
 "classname" "worldspawn"
 // brush 0
 {
-( -32 -32 -32 ) ( -32 -31 -32 ) ( -32 -32 -31 ) none [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 0
-( -32 -32 -32 ) ( -32 -32 -31 ) ( -31 -32 -32 ) none [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 0
-( -32 -32 -32 ) ( -31 -32 -32 ) ( -32 -31 -32 ) none [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 0 0 0
-( 32 32 32 ) ( 32 33 32 ) ( 33 32 32 ) none [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1 0 0 0
-( 32 32 32 ) ( 33 32 32 ) ( 32 32 33 ) none [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 0
-( 32 32 32 ) ( 32 32 33 ) ( 32 33 32 ) none [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1 0 0 0
+( -32 -32 -32 ) ( -32 -31 -32 ) ( -32 -32 -31 ) none [ 0 -1 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -32 -32 -32 ) ( -32 -32 -31 ) ( -31 -32 -32 ) none [ 1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( -32 -32 -32 ) ( -31 -32 -32 ) ( -32 -31 -32 ) none [ -1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 32 32 32 ) ( 32 33 32 ) ( 33 32 32 ) none [ 1 0 0 0 ] [ 0 -1 0 0 ] 0 1 1
+( 32 32 32 ) ( 33 32 32 ) ( 32 32 33 ) none [ -1 0 0 0 ] [ 0 0 -1 0 ] 0 1 1
+( 32 32 32 ) ( 32 32 33 ) ( 32 33 32 ) none [ 0 1 0 0 ] [ 0 0 -1 0 ] 0 1 1
 }
 }
 )";
@@ -245,7 +268,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeWorldspawnWithBrushInDefaultLayer", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
             Model::BrushNode* brushNode = new Model::BrushNode(builder.createCube(64.0, "none").value());
@@ -277,7 +300,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeWorldspawnWithBrushInCustomLayer", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::Layer layer = Model::Layer("Custom Layer");
             REQUIRE(layer.sortIndex() == Model::Layer::invalidSortIndex());
@@ -322,7 +345,7 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writeWorldspawnWithCustomLayerWithSortIndex", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::Layer layer = Model::Layer("Custom Layer");
             layer.setSortIndex(1);
@@ -362,7 +385,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeMapWithGroupInDefaultLayer", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::GroupNode* groupNode = new Model::GroupNode(Model::Group("Group"));
             map.defaultLayer()->addChild(groupNode);
@@ -404,7 +427,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeMapWithGroupInCustomLayer", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::LayerNode* layerNode = new Model::LayerNode(Model::Layer("Custom Layer"));
             map.addChild(layerNode);
@@ -457,7 +480,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeMapWithNestedGroupInCustomLayer", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::LayerNode* layerNode = new Model::LayerNode(Model::Layer("Custom Layer"));
             map.addChild(layerNode);
@@ -521,7 +544,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.ensureLayerAndGroupPersistentIDs", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::LayerNode* layerNode1 = new Model::LayerNode(Model::Layer("Custom Layer 1"));
             layerNode1->setPersistentId(1u);
@@ -599,7 +622,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.exportMapWithOmittedLayers", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
 
             // default layer (omit from export)
@@ -607,7 +630,7 @@ R"(// entity 0
             defaultLayer.setOmitFromExport(true);
             map.defaultLayer()->setLayer(std::move(defaultLayer));
 
-            auto* defaultLayerPointEntityNode = new Model::EntityNode(Model::Entity({
+            auto* defaultLayerPointEntityNode = new Model::EntityNode(Model::Entity({}, {
                 {"classname", "defaultLayerPointEntity"}
             }));
 
@@ -624,7 +647,7 @@ R"(// entity 0
 
             map.addChild(layerNode1);
 
-            auto* layer1PointEntityNode = new Model::EntityNode(Model::Entity({
+            auto* layer1PointEntityNode = new Model::EntityNode(Model::Entity({}, {
                 {"classname", "layer1PointEntity"}
             }));
             layerNode1->addChild(layer1PointEntityNode);
@@ -636,7 +659,7 @@ R"(// entity 0
             auto* layerNode2 = new Model::LayerNode(Model::Layer("Custom Layer 2"));
             map.addChild(layerNode2);
 
-            auto* layer2PointEntityNode = new Model::EntityNode(Model::Entity({
+            auto* layer2PointEntityNode = new Model::EntityNode(Model::Entity({}, {
                 {"classname", "layer2PointEntity"}
             }));
             layerNode2->addChild(layer2PointEntityNode);
@@ -682,7 +705,7 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writeMapWithInheritedLock", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::LayerNode* layerNode = new Model::LayerNode(Model::Layer("Custom Layer"));
             map.addChild(layerNode);
@@ -719,7 +742,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeNodesWithNestedGroup", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
 
@@ -779,7 +802,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeMapWithLinkedGroups", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            auto worldNode = Model::WorldNode(Model::Entity(), Model::MapFormat::Standard);
+            auto worldNode = Model::WorldNode({}, {}, Model::MapFormat::Standard);
 
             auto group = Model::Group("Group");
             group.transform(vm::translation_matrix(vm::vec3(32.0, 0.0, 0.0)));
@@ -859,7 +882,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeNodesWithLinkedGroup", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            auto worldNode = Model::WorldNode(Model::Entity(), Model::MapFormat::Standard);
+            auto worldNode = Model::WorldNode({}, {}, Model::MapFormat::Standard);
 
             auto group = Model::Group("Group");
             group.transform(vm::translation_matrix(vm::vec3(32.0, 0.0, 0.0)));
@@ -896,7 +919,7 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writeProtectedEntityProperties", "[NodeWriterTest]") {
-            auto worldNode = Model::WorldNode{Model::Entity{}, Model::MapFormat::Standard};
+            auto worldNode = Model::WorldNode{{}, {}, Model::MapFormat::Standard};
 
             SECTION("No protected properties") {
                 auto entity = Model::Entity{};
@@ -941,7 +964,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeFaces", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Standard);
+            Model::WorldNode map({}, {}, Model::MapFormat::Standard);
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
             Model::BrushNode* brushNode = new Model::BrushNode(builder.createCube(64.0, "none").value());
 
@@ -965,9 +988,9 @@ R"(( -32 -32 -32 ) ( -32 -31 -32 ) ( -32 -32 -31 ) none 0 0 0 1 1
         }
 
         TEST_CASE("NodeWriterTest.writePropertiesWithQuotationMarks", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity({
+            Model::WorldNode map({}, {
                 {"message", "\"holy damn\", he said"}
-            }), Model::MapFormat::Standard);
+            }, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -986,9 +1009,9 @@ R"(// entity 0
         }
 
         TEST_CASE("NodeWriterTest.writePropertiesWithEscapedQuotationMarks", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity({
+            Model::WorldNode map({}, {
                 {"message", "\\\"holy damn\\\", he said"}
-            }), Model::MapFormat::Standard);
+            }, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -1008,9 +1031,9 @@ R"(// entity 0
 
         // https://github.com/TrenchBroom/TrenchBroom/issues/1739
         TEST_CASE("NodeWriterTest.writePropertiesWithNewlineEscapeSequence", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity({
+            Model::WorldNode map({}, {
                 {"message", "holy damn\\nhe said"}
-            }), Model::MapFormat::Standard);
+            }, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -1030,11 +1053,11 @@ R"(// entity 0
 
         // https://github.com/TrenchBroom/TrenchBroom/issues/2556
         TEST_CASE("NodeWriterTest.writePropertiesWithTrailingBackslash", "[NodeWriterTest]") {
-            Model::WorldNode map(Model::Entity({
+            Model::WorldNode map({}, {
                 {"message\\", "holy damn\\"},
                 {"message2", "holy damn\\\\"},
                 {"message3", "holy damn\\\\\\"},
-            }), Model::MapFormat::Standard);
+            }, Model::MapFormat::Standard);
 
             std::stringstream str;
             NodeWriter writer(map, str);
@@ -1057,7 +1080,7 @@ R"(// entity 0
         TEST_CASE("NodeWriterTest.writeSmallValuesWithoutScientificNotation", "[NodeWriterTest]") {
             const vm::bbox3 worldBounds(8192.0);
 
-            Model::WorldNode map(Model::Entity(), Model::MapFormat::Quake2);
+            Model::WorldNode map({}, {}, Model::MapFormat::Quake2);
 
             Model::BrushBuilder builder(map.mapFormat(), worldBounds);
             auto brush = builder.createCube(64.0, "defaultTexture").value();
@@ -1088,11 +1111,11 @@ R"(// entity 0
 // brush 0
 {
 ( -21.849932013225562 44.73955142106092 24.350626473659066 ) ( -21.833750423753578 45.66659406103575 23.976019880243154 ) ( -21.5848373706685 45.09682147885355 25.24621730450337 ) defaultTexture 1e-05 2e-06 0.003 0.004 0.005 0 0 0.006
-( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 21.866113602697553 -43.81250878108611 -24.725233067074978 ) ( 20.885845405783215 -44.62575313692022 -24.110653633785617 ) defaultTexture 0 0 0 1 1 0 0 0
-( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 20.885845405783215 -44.62575313692022 -24.110653633785617 ) ( 22.11502665578263 -44.3822813632683 -23.45503564281476 ) defaultTexture 0 0 0 1 1 0 0 0
-( -21.849932013225562 44.73955142106092 24.350626473659066 ) ( -21.5848373706685 45.09682147885355 25.24621730450337 ) ( -22.814018620667916 44.85334970520164 24.59059931353252 ) defaultTexture 0 0 0 1 1 0 0 0
-( -21.849932013225562 44.73955142106092 24.350626473659066 ) ( -22.814018620667916 44.85334970520164 24.59059931353252 ) ( -21.833750423753578 45.66659406103575 23.976019880243154 ) defaultTexture 0 0 0 1 1 0 0 0
-( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 22.11502665578263 -44.3822813632683 -23.45503564281476 ) ( 21.866113602697553 -43.81250878108611 -24.725233067074978 ) defaultTexture 0 0 0 1 1 0 0 0
+( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 21.866113602697553 -43.81250878108611 -24.725233067074978 ) ( 20.885845405783215 -44.62575313692022 -24.110653633785617 ) defaultTexture 0 0 0 1 1
+( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 20.885845405783215 -44.62575313692022 -24.110653633785617 ) ( 22.11502665578263 -44.3822813632683 -23.45503564281476 ) defaultTexture 0 0 0 1 1
+( -21.849932013225562 44.73955142106092 24.350626473659066 ) ( -21.5848373706685 45.09682147885355 25.24621730450337 ) ( -22.814018620667916 44.85334970520164 24.59059931353252 ) defaultTexture 0 0 0 1 1
+( -21.849932013225562 44.73955142106092 24.350626473659066 ) ( -22.814018620667916 44.85334970520164 24.59059931353252 ) ( -21.833750423753578 45.66659406103575 23.976019880243154 ) defaultTexture 0 0 0 1 1
+( 21.849932013225562 -44.73955142106092 -24.350626473659066 ) ( 22.11502665578263 -44.3822813632683 -23.45503564281476 ) ( 21.866113602697553 -43.81250878108611 -24.725233067074978 ) defaultTexture 0 0 0 1 1
 }
 }
 )";
@@ -1112,7 +1135,7 @@ R"(// entity 0
 
             const auto worldBounds = vm::bbox3{8192.0};
 
-            auto map = Model::WorldNode{Model::Entity{}, Model::MapFormat::Standard};
+            auto map = Model::WorldNode{{}, {}, Model::MapFormat::Standard};
 
             auto builder = Model::BrushBuilder(map.mapFormat(), worldBounds);
             auto brush = builder.createCube(64.0, textureName).value();
@@ -1149,7 +1172,7 @@ R"(// entity 0
                 {128, -64, 4, 0.6, 0}, {128, 0, 4, 0.6, -0.25}, {128, 64, 4, 0.6, -0.5},
                 {192, -64, 4, 0.8, 0}, {192, 0, 4, 0.8, -0.25}, {192, 64, 4, 0.8, -0.5} }, "common/caulk"};
             
-            auto map = Model::WorldNode{Model::Entity{}, Model::MapFormat::Standard};
+            auto map = Model::WorldNode{{}, {}, Model::MapFormat::Standard};
             map.defaultLayer()->addChild(new Model::PatchNode{std::move(patch)});
 
             auto str = std::stringstream{};

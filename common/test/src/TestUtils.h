@@ -56,7 +56,8 @@ namespace TrenchBroom {
         class BrushFace;
         class BrushNode;
         class Game;
-        class GameConfig;
+        struct GameConfig;
+        class GroupNode;
         class Node;
 
         BrushFace createParaxial(const vm::vec3& point0, const vm::vec3& point1, const vm::vec3& point2, const std::string& textureName = "");
@@ -87,6 +88,8 @@ namespace TrenchBroom {
         const Model::BrushFace* findFaceByPoints(const std::vector<Model::BrushFace>& faces, const vm::vec3& point0, const vm::vec3& point1, const vm::vec3& point2);
         void checkFaceTexCoordSystem(const Model::BrushFace& face, const bool expectParallel);
         void checkBrushTexCoordSystem(const Model::BrushNode* brushNode, const bool expectParallel);
+
+        void setLinkedGroupId(GroupNode& groupNode, std::string linkedGroupId);
     }
 
     namespace View {

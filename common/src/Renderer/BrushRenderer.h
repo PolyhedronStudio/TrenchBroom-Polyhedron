@@ -97,13 +97,8 @@ namespace TrenchBroom {
             explicit BrushRenderer(const Model::EditorContext& editorContext);
 
             /**
-             * New brushes are invalidated, brushes already in the BrushRenderer are not invalidated.
+             * Remove all brushes.
              */
-            void addBrushes(const std::vector<Model::BrushNode*>& brushes);
-            /**
-             * New brushes are invalidated, brushes already in the BrushRenderer are not invalidated.
-             */
-            void setBrushes(const std::vector<Model::BrushNode*>& brushes);
             void clear();
 
             /**
@@ -117,8 +112,7 @@ namespace TrenchBroom {
              * maps will be empty, so the BrushRenderer will not have any lingering Texture* pointers.
              */
             void invalidate();
-            void invalidateBrush(Model::BrushNode* brush);
-            void invalidateBrushes(const std::vector<Model::BrushNode*>& brushes);
+            void invalidateBrush(const Model::BrushNode* brush);
             bool valid() const;
 
             /**
@@ -204,9 +198,16 @@ namespace TrenchBroom {
             vm::vec4f edgeColor(BrushRenderFlags::Type brushFlags, const Model::BrushFace& face1, const Model::BrushFace& face2) const;
 
             void validateBrush(const Model::BrushNode* brush);
+        public:
+            /**
+             * Adds a brush. Calling with an already-added brush is allowed, but ignored (not guaranteed to invalidate it).
+             */
             void addBrush(const Model::BrushNode* brush);
+            /**
+             * Removes a brush. Calling with an unknown brush is allowed, but ignored.
+             */
             void removeBrush(const Model::BrushNode* brush);
-
+        private:
             /**
              * If the given brush is not currently in the VBO, it's silently ignored.
              * Otherwise, it's removed from the VBO (having its indices zeroed out, causing it to no longer draw).

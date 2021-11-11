@@ -21,20 +21,16 @@
 
 #include "Color.h"
 #include "FloatType.h"
-#include "Notifier.h"
 #include "Assets/ModelDefinition.h"
 
 #include <vecmath/bbox.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace TrenchBroom {
-    namespace EL {
-        class VariableStore;
-    }
-
     namespace Assets {
         class PropertyDefinition;
         class FlagsPropertyDefinition;
@@ -59,10 +55,8 @@ namespace TrenchBroom {
             std::string m_name;
             Color m_color;
             std::string m_description;
-            size_t m_usageCount;
+            std::atomic<size_t> m_usageCount;
             PropertyDefinitionList m_propertyDefinitions;
-        public:
-            Notifier<> usageCountDidChangeNotifier;
         public:
             virtual ~EntityDefinition();
 
@@ -100,8 +94,6 @@ namespace TrenchBroom {
 
             EntityDefinitionType type() const override;
             const vm::bbox3& bounds() const;
-            ModelSpecification model(const EL::VariableStore& variableStore) const;
-            ModelSpecification defaultModel() const;
             const ModelDefinition& modelDefinition() const;
         };
 
