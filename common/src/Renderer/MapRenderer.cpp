@@ -277,16 +277,32 @@ namespace TrenchBroom {
                 [](Model::WorldNode*) {},
                 [](Model::LayerNode*) {},
                 [&](Model::GroupNode* group) {
-                    m_groupRenderer->removeGroup(group);
+                    if (adding) {
+                        m_groupRenderer->addGroup(group);
+                    } else {
+                        m_groupRenderer->invalidateGroup(group);
+                    }                    
                 },
                 [&](Model::EntityNode* entity) {
-                    m_entityRenderer->removeEntity(entity);
+                    if (adding) {
+                        m_entityRenderer->addEntity(entity);
+                    } else {
+                        m_entityRenderer->invalidateEntity(entity);
+                    }
                 },
-                    [&](Model::BrushNode* brush) {
-                    m_brushRenderer->removeBrush(brush);
+                [&](Model::BrushNode* brush) {
+                    if (adding) {
+                        m_brushRenderer->addBrush(brush);
+                    } else {
+                        m_brushRenderer->invalidateBrush(brush);
+                    }
                 },
-                    [&](Model::PatchNode* patchNode) {
-                    m_patchRenderer->removePatch(patchNode);
+                [&](Model::PatchNode* patchNode) {
+                    if (adding) {
+                        m_patchRenderer->addPatch(patchNode);
+                    } else {
+                        m_patchRenderer->invalidatePatch(patchNode);
+                    }
                 }
             ));
         }
