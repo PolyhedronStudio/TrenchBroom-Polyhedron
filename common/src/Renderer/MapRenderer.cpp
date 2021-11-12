@@ -77,9 +77,9 @@ namespace TrenchBroom {
         void MapRenderer::clear() {
             m_groupRenderer->clear();
             m_entityRenderer->clear();
-            m_entityLinkRenderer->invalidate();
             m_brushRenderer->clear();
             m_patchRenderer->clear();
+            m_entityLinkRenderer->invalidate();
             m_groupLinkRenderer->invalidate();
             m_trackedNodes.clear();
         }
@@ -144,37 +144,39 @@ namespace TrenchBroom {
             renderBatch.addOneShot(new SetupGL());
         }
 
-        // void MapRenderer::renderDefaultOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     m_defaultRenderer->setShowOverlays(renderContext.render3D());
-        //     m_defaultRenderer->renderOpaque(renderContext, renderBatch);
-        // }
-        //
-        // void MapRenderer::renderDefaultTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     m_defaultRenderer->setShowOverlays(renderContext.render3D());
-        //     //m_defaultRenderer->renderTransparent(renderContext, renderBatch);
-        // }
-        //
-        // void MapRenderer::renderSelectionOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     if (!renderContext.hideSelection()) {
-        //         m_selectionRenderer->renderOpaque(renderContext, renderBatch);
-        //     }
-        // }
-        //
-        // void MapRenderer::renderSelectionTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     // if (!renderContext.hideSelection()) {
-        //     //     m_selectionRenderer->renderTransparent(renderContext, renderBatch);
-        //     // }
-        // }
-        //
-        // void MapRenderer::renderLockedOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     m_lockedRenderer->setShowOverlays(renderContext.render3D());
-        //     m_lockedRenderer->renderOpaque(renderContext, renderBatch);
-        // }
-        //
-        // void MapRenderer::renderLockedTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
-        //     m_lockedRenderer->setShowOverlays(renderContext.render3D());
-        //     //m_lockedRenderer->renderTransparent(renderContext, renderBatch);
-        // }
+#if 0
+        void MapRenderer::renderDefaultOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
+            m_defaultRenderer->setShowOverlays(renderContext.render3D());
+            m_defaultRenderer->renderOpaque(renderContext, renderBatch);
+        }
+       
+        void MapRenderer::renderDefaultTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
+            m_defaultRenderer->setShowOverlays(renderContext.render3D());
+            m_defaultRenderer->renderTransparent(renderContext, renderBatch);
+        }
+       
+        void MapRenderer::renderSelectionOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
+            if (!renderContext.hideSelection()) {
+                m_selectionRenderer->renderOpaque(renderContext, renderBatch);
+            }
+        }
+       
+        void MapRenderer::renderSelectionTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
+            if (!renderContext.hideSelection()) {
+                m_selectionRenderer->renderTransparent(renderContext, renderBatch);
+            }
+        }
+       
+        void MapRenderer::renderLockedOpaque(RenderContext& renderContext, RenderBatch& renderBatch) {
+            m_lockedRenderer->setShowOverlays(renderContext.render3D());
+            m_lockedRenderer->renderOpaque(renderContext, renderBatch);
+        }
+       
+        void MapRenderer::renderLockedTransparent(RenderContext& renderContext, RenderBatch& renderBatch) {
+            m_lockedRenderer->setShowOverlays(renderContext.render3D());
+            m_lockedRenderer->renderTransparent(renderContext, renderBatch);
+        }
+#endif
 
         void MapRenderer::renderEntityLinks(RenderContext& renderContext, RenderBatch& renderBatch) {
             m_entityLinkRenderer->render(renderContext, renderBatch);
@@ -189,6 +191,9 @@ namespace TrenchBroom {
             // setupSelectionRenderer(*m_selectionRenderer);
             // setupLockedRenderer(*m_lockedRenderer);
             setupEntityLinkRenderer();
+        }
+
+        void MapRenderer::setupEntityLinkRenderer() {
         }
 
 #if 0
@@ -249,62 +254,11 @@ namespace TrenchBroom {
         }
 #endif
 
+        // FIXME: make sure BrushRenderer etc. are using this predicate
         static bool selected(const Model::Node* node) {
             return node->selected() || node->descendantSelected() || node->parentSelected();
         }
 
-        MapRenderer::Renderer MapRenderer::determineDesiredRenderers(Model::Node* node) {
-            int result = 0;
-
-            node->accept(kdl::overload(
-                [](Model::WorldNode*) {},
-                [](Model::LayerNode*) {},
-                [&](Model::GroupNode* group) {
-                    if (group->locked()) {
-                        result = Renderer_Locked;
-                    } else if (selected(group) || group->opened()) {
-                        result = Renderer_Selection;
-                    } else {
-                        result = Renderer_Default;
-                    }
-                },
-                [&](Model::EntityNode* entity) {
-                    if (entity->locked()) {
-                        result = Renderer_Locked;
-                    } else if (selected(entity)) {
-                        result = Renderer_Selection;
-                    } else {
-                        result = Renderer_Default;
-                    }
-                },
-                [&](Model::BrushNode* brush) {
-                    if (brush->locked()) {
-                        result = Renderer_Locked;
-                    } else if (selected(brush) || brush->hasSelectedFaces()) {
-                        result = Renderer_Selection;
-                    }
-                    if (!brush->selected() && !brush->parentSelected() && !brush->locked()) {
-                        result |= Renderer_Default;
-                    }
-                },
-                [&](Model::PatchNode* patchNode) {
-                    patches.push_back(patchNode);
-#if 0
-                    // FIXME: re-add this logic in the patch renderer
-                    if (patchNode->locked()) {
-                        result = Renderer_Locked;
-                    } else if (selected(patchNode)) {
-                        result = Renderer_Selection;
-                    }
-                    if (!patchNode->selected() && !patchNode->parentSelected() && !patchNode->locked()) {
-                        result |= Renderer_Default;
-                    }
-#endif
-                }
-            ));
-            return static_cast<Renderer>(result);
-        }
-        
         /**
          * - Determine which renderers the given node should be in
          * - Remove from any renderers the node shouldn't be in
@@ -312,34 +266,29 @@ namespace TrenchBroom {
          * - Invalidate, for any renderers it was already present in
          */
         void MapRenderer::updateAndInvalidateNode(Model::Node* node) {
-            const Renderer desiredRenderers = determineDesiredRenderers(node);
-            Renderer currentRenderers;
+            bool adding = false;
 
-            if (auto it = m_trackedNodes.find(node); it != m_trackedNodes.end()) {
-                currentRenderers = it->second;
-            } else {
-                currentRenderers = static_cast<Renderer>(0);
+            if (auto it = m_trackedNodes.find(node); it == m_trackedNodes.end()) {
+                adding = true;
+                m_trackedNodes.insert(node);
             }
 
-            auto updateForRenderer = [&](const Renderer r, ObjectRenderer* o) {
-                const bool isRDesired = (desiredRenderers & r) != 0;
-                const bool isRCurrent = (currentRenderers & r) != 0;
-
-                if (isRCurrent && !isRDesired) {
-                    o->removeNode(node);
-                } else if (!isRCurrent && isRDesired) {
-                    o->addNode(node);
-                } else if (isRCurrent && isRDesired) {
-                    o->invalidateNode(node);
+            node->accept(kdl::overload(
+                [](Model::WorldNode*) {},
+                [](Model::LayerNode*) {},
+                [&](Model::GroupNode* group) {
+                    m_groupRenderer->removeGroup(group);
+                },
+                [&](Model::EntityNode* entity) {
+                    m_entityRenderer->removeEntity(entity);
+                },
+                    [&](Model::BrushNode* brush) {
+                    m_brushRenderer->removeBrush(brush);
+                },
+                    [&](Model::PatchNode* patchNode) {
+                    m_patchRenderer->removePatch(patchNode);
                 }
-            };
-
-            updateForRenderer(Renderer_Default, m_defaultRenderer.get());
-            updateForRenderer(Renderer_Selection, m_selectionRenderer.get());
-            updateForRenderer(Renderer_Locked, m_lockedRenderer.get());
-
-            // Update the metadata to reflect the changes that we made above
-            m_trackedNodes[node] = desiredRenderers;
+            ));
         }
 
         void MapRenderer::updateAndInvalidateNodeRecursive(Model::Node* node) {
@@ -371,25 +320,27 @@ namespace TrenchBroom {
         }
 
         void MapRenderer::removeNode(Model::Node* node) {
-            if (auto it = m_trackedNodes.find(node); it != m_trackedNodes.end()) {
-                const Renderer renderers = it->second;
-
-                if (renderers & Renderer_Default) {
-                    m_defaultRenderer->removeNode(node);
+            node->accept(kdl::overload(
+                [](Model::WorldNode*) {},
+                [](Model::LayerNode*) {},
+                [&](Model::GroupNode* group) {
+                    m_groupRenderer->removeGroup(group);
+                },
+                [&](Model::EntityNode* entity) {
+                    m_entityRenderer->removeEntity(entity);
+                },
+                [&](Model::BrushNode* brush) {
+                    m_brushRenderer->removeBrush(brush);
+                },
+                [&](Model::PatchNode* patchNode) {
+                    m_patchRenderer->removePatch(patchNode);
                 }
-                if (renderers & Renderer_Selection) {
-                    m_selectionRenderer->removeNode(node);
-                }
-                if (renderers & Renderer_Locked) {
-                    m_lockedRenderer->removeNode(node);
-                }
+            ));
 
-                m_trackedNodes.erase(it);
+            m_trackedNodes.erase(node);
 
-                // At this point, none of the default/selection/locked renderers,
-                // or their underlying node-type specific renderers, have a reference 
-                // to `node` anymore, and they won't render it.
-            }
+            // At this point, none of the node-type specific renderers have a reference 
+            // to `node` anymore, and they won't render it.
         }
 
         void MapRenderer::removeNodeRecursive(Model::Node* node) {
@@ -422,16 +373,14 @@ namespace TrenchBroom {
         }
 
         /**
-         * Marks the nodes that are already tracked in the given renderers as invalid, i.e.
+         * Marks the nodes that are already tracked as invalid, i.e.
          * needing to be re-rendered.
          */
-        void MapRenderer::invalidateRenderers(Renderer renderers) {
-            if ((renderers & Renderer_Default) != 0)
-                m_defaultRenderer->invalidate();
-            if ((renderers & Renderer_Selection) != 0)
-                m_selectionRenderer->invalidate();
-            if ((renderers& Renderer_Locked) != 0)
-                m_lockedRenderer->invalidate();
+        void MapRenderer::invalidateRenderers() {
+            m_groupRenderer->invalidate();
+            m_entityRenderer->invalidate();
+            m_brushRenderer->invalidate();
+            m_patchRenderer->invalidate();
         }
 
         void MapRenderer::invalidateEntityLinkRenderer() {
@@ -557,13 +506,13 @@ namespace TrenchBroom {
             invalidateEntityLinkRenderer();
         }
 
-        void MapRenderer::groupWasOpened(Model::GroupNode*) {
+        void MapRenderer::groupWasOpened(Model::GroupNode* group) {
             debugLog(__func__, group);
             invalidateGroupLinkRenderer();
             invalidateEntityLinkRenderer();
         }
 
-        void MapRenderer::groupWasClosed(Model::GroupNode*) {
+        void MapRenderer::groupWasClosed(Model::GroupNode* group) {
             debugLog(__func__, group);
             invalidateGroupLinkRenderer();
             invalidateEntityLinkRenderer();
@@ -635,47 +584,6 @@ namespace TrenchBroom {
                 invalidateRenderers();
                 invalidateEntityLinkRenderer();
                 invalidateGroupLinkRenderer();
-            }
-        }
-
-        // invalidating specific nodes
-
-        void MapRenderer::invalidateNodes(const std::vector<Model::Node*>& nodes) {
-            size_t invalidatedNodes = 0;
-
-            for (auto* node : nodes) {
-                node->accept(kdl::overload(
-                    [](auto&&, Model::WorldNode* world)  {
-                        //world->visitChildren(thisLambda);
-                    },
-                    [](auto&&, Model::LayerNode* layer)  {
-                        //layer->visitChildren(thisLambda);
-                    },
-                    [&](auto&&, Model::GroupNode* group) {
-                        m_groupRenderer->invalidateGroup(group);
-                        ++invalidatedNodes;
-                        //group->visitChildren(thisLambda);
-                    },
-                    [&](auto&&, Model::EntityNode* entity) {
-                        m_entityRenderer->invalidateEntity(entity);
-                        ++invalidatedNodes;
-                        //entity->visitChildren(thisLambda);
-                    },
-                    [&](auto&&, Model::BrushNode* brush) {
-                        m_brushRenderer->invalidateBrush(brush);
-                        ++invalidatedNodes;
-                    },
-                    [&](auto&&, Model::PatchNode* patchNode) {
-                        m_patchRenderer->invalidate();
-                        ++invalidatedNodes;
-                    }
-                ));
-            }
-        }
-
-        void MapRenderer::invalidateBrushFaces(const std::vector<Model::BrushFaceHandle>& faces) {
-            for (const auto& face : faces) {
-                m_brushRenderer->invalidateBrush(face.node());
             }
         }
     }

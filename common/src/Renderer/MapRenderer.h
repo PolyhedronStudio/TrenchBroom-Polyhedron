@@ -22,7 +22,7 @@
 #include "Macros.h"
 #include "NotifierConnection.h"
 
-#include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <vector>
 
@@ -69,14 +69,7 @@ namespace TrenchBroom {
             std::unique_ptr<PatchRenderer> m_patchRenderer;
             std::unique_ptr<GroupLinkRenderer> m_groupLinkRenderer;
 
-            typedef enum {
-                Renderer_Default            = 1,
-                Renderer_Selection          = 2,
-                Renderer_Locked             = 4,
-                Renderer_All                = Renderer_Default | Renderer_Selection | Renderer_Locked
-            } Renderer;
-
-            std::unordered_map<Model::Node*, Renderer> m_trackedNodes;
+            std::unordered_set<Model::Node*> m_trackedNodes;
 
             NotifierConnection m_notifierConnection;
         public:
@@ -104,18 +97,18 @@ namespace TrenchBroom {
             void renderGroupLinks(RenderContext& renderContext, RenderBatch& renderBatch);
 
             void setupRenderers();
-            void setupDefaultRenderer(ObjectRenderer& renderer);
-            void setupSelectionRenderer(ObjectRenderer& renderer);
-            void setupLockedRenderer(ObjectRenderer& renderer);
+            //void setupDefaultRenderer(ObjectRenderer& renderer);
+            //void setupSelectionRenderer(ObjectRenderer& renderer);
+            //void setupLockedRenderer(ObjectRenderer& renderer);
+            void setupEntityLinkRenderer();
 
-            static Renderer determineDesiredRenderers(Model::Node* node);
             void updateAndInvalidateNode(Model::Node* node);
             void updateAndInvalidateNodeRecursive(Model::Node* node);
             void removeNode(Model::Node* node);
             void removeNodeRecursive(Model::Node* node);
             void updateAllNodes();
 
-            void invalidateRenderers(Renderer renderers);
+            void invalidateRenderers();
             void invalidateEntityLinkRenderer();
             void invalidateGroupLinkRenderer();
             void reloadEntityModels();
@@ -146,12 +139,6 @@ namespace TrenchBroom {
             void editorContextDidChange();
 
             void preferenceDidChange(const IO::Path& path);
-        private: // invalidating specific nodes
-            class InvalidateNode;
-            friend class InvalidateNode;
-
-            void invalidateNodes(const std::vector<Model::Node*>& nodes);
-            void invalidateBrushFaces(const std::vector<Model::BrushFaceHandle>& faces);
         };
     }
 }
